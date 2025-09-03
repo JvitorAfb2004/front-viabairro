@@ -119,13 +119,32 @@ export const anuncios = [
   {
     id: 1,
     titulo: 'Padaria Artesanal - Pães Frescos Diários',
-    descricao: 'Padaria tradicional com pães frescos, doces caseiros e salgados. Atendemos desde 1985 com receitas de família.',
+    descricao: 'Padaria tradicional com pães frescos, doces caseiros e salgados. Atendemos desde 1985 com receitas de família.\n\nNossos produtos são feitos diariamente com ingredientes selecionados e muito carinho. Venha conhecer nossos sabores únicos!',
     categoria: 'Alimentação',
-    preco: 'A partir de R$ 5,00',
-    usuario: usuarios[0],
+    preco: 5.00,
+    vendedor: {
+      nome: usuarios[0].nome,
+      telefone: usuarios[0].telefone,
+      email: usuarios[0].email,
+      avaliacao: usuarios[0].avaliacoes,
+      totalAvaliacoes: usuarios[0].totalAvaliacoes,
+      membroDesde: usuarios[0].dataCadastro,
+      totalAnuncios: 3
+    },
     imagens: [
       'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop'
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'
+    ],
+    visualizacoes: 245,
+    localizacao: 'Rua Augusta, 1234 - Vila Madalena, São Paulo, SP',
+    dataPublicacao: '2024-01-15',
+    caracteristicas: [
+      'Pães frescos diários',
+      'Doces caseiros',
+      'Salgados artesanais',
+      'Receitas de família',
+      'Ingredientes selecionados'
     ],
     avaliacoes: 4.8,
     totalAvaliacoes: 127,
@@ -134,19 +153,36 @@ export const anuncios = [
     estado: 'SP',
     whatsapp: '11999991234',
     horarioFuncionamento: 'Seg-Sáb: 6h às 20h | Dom: 7h às 18h',
-    destaque: true,
-    dataPublicacao: '2024-01-15'
+    destaque: true
   },
   {
     id: 2,
     titulo: 'Barbearia Moderna - Corte e Barba',
-    descricao: 'Barbearia especializada em cortes modernos, barba e bigode. Ambiente descontraído e profissionais experientes.',
+    descricao: 'Barbearia especializada em cortes modernos, barba e bigode. Ambiente descontraído e profissionais experientes.\n\nOferecemos serviços de corte, barba, bigode e tratamentos capilares. Venha conhecer nosso espaço!',
     categoria: 'Beleza & Estética',
-    preco: 'R$ 35,00 - R$ 80,00',
-    usuario: usuarios[1],
+    preco: 35.00,
+    vendedor: {
+      nome: usuarios[1].nome,
+      telefone: usuarios[1].telefone,
+      email: usuarios[1].email,
+      avaliacao: usuarios[1].avaliacoes,
+      totalAvaliacoes: usuarios[1].totalAvaliacoes,
+      membroDesde: usuarios[1].dataCadastro,
+      totalAnuncios: 1
+    },
     imagens: [
       'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=300&fit=crop'
+    ],
+    visualizacoes: 189,
+    localizacao: 'Av. Paulista, 567 - Pinheiros, São Paulo, SP',
+    dataPublicacao: '2024-01-10',
+    caracteristicas: [
+      'Cortes modernos',
+      'Barba e bigode',
+      'Ambiente descontraído',
+      'Profissionais experientes',
+      'Tratamentos capilares'
     ],
     avaliacoes: 4.9,
     totalAvaliacoes: 89,
@@ -155,19 +191,36 @@ export const anuncios = [
     estado: 'SP',
     whatsapp: '11988885678',
     horarioFuncionamento: 'Ter-Sáb: 9h às 19h',
-    destaque: true,
-    dataPublicacao: '2024-01-10'
+    destaque: true
   },
   {
     id: 3,
     titulo: 'Personal Trainer - Treinamento Funcional',
-    descricao: 'Aulas personalizadas de treinamento funcional, pilates e yoga. Atendimento domiciliar ou em estúdio.',
+    descricao: 'Aulas personalizadas de treinamento funcional, pilates e yoga. Atendimento domiciliar ou em estúdio.\n\nPersonal trainer certificada com mais de 5 anos de experiência. Treinos personalizados para seus objetivos!',
     categoria: 'Saúde & Bem-estar',
-    preco: 'R$ 80,00/aula',
-    usuario: usuarios[2],
+    preco: 80.00,
+    vendedor: {
+      nome: usuarios[2].nome,
+      telefone: usuarios[2].telefone,
+      email: usuarios[2].email,
+      avaliacao: usuarios[2].avaliacoes,
+      totalAvaliacoes: usuarios[2].totalAvaliacoes,
+      membroDesde: usuarios[2].dataCadastro,
+      totalAnuncios: 2
+    },
     imagens: [
       'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=300&fit=crop'
+    ],
+    visualizacoes: 156,
+    localizacao: 'Rua Barata Ribeiro, 890 - Copacabana, Rio de Janeiro, RJ',
+    dataPublicacao: '2024-01-05',
+    caracteristicas: [
+      'Treinamento funcional',
+      'Pilates',
+      'Yoga',
+      'Atendimento domiciliar',
+      'Personal trainer certificada'
     ],
     avaliacoes: 4.7,
     totalAvaliacoes: 203,
@@ -176,8 +229,7 @@ export const anuncios = [
     estado: 'RJ',
     whatsapp: '21977779012',
     horarioFuncionamento: 'Seg-Sex: 6h às 22h | Sáb: 8h às 16h',
-    destaque: false,
-    dataPublicacao: '2024-01-05'
+    destaque: false
   },
   {
     id: 4,

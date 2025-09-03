@@ -18,6 +18,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import Home from "./pages/Home";
 import Buscar from "./pages/Buscar";
 import PerfilPublico from "./pages/PerfilPublico";
+import DetalhesAnuncio from "./pages/DetalhesAnuncio";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import RecuperarSenha from "./pages/RecuperarSenha";
@@ -54,6 +55,7 @@ function App() {
               <Route index element={<Home />} />
               <Route path="buscar" element={<Buscar />} />
               <Route path="perfil/:id" element={<PerfilPublico />} />
+              <Route path="anuncio/:id" element={<DetalhesAnuncio />} />
             </Route>
 
             {/* Rotas de Autenticação */}
