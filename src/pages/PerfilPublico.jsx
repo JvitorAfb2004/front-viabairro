@@ -1,0 +1,219 @@
+import { useState } from 'react'
+import { MapPin, Star, Phone, Mail, Instagram, Facebook, Globe, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '../components/ui/button'
+
+const PerfilPublico = () => {
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+  
+  const profile = {
+    name: 'Padaria do João',
+    description: 'Padaria tradicional familiar há mais de 20 anos no bairro. Especializada em pães artesanais, doces caseiros e salgados frescos. Atendemos com carinho e qualidade!',
+    location: 'Vila Madalena, São Paulo - SP',
+    rating: 4.8,
+    reviews: 127,
+    phone: '(11) 99999-9999',
+    email: 'contato@padariadojoao.com',
+    socialMedia: {
+      instagram: '@padariadojoao',
+      facebook: 'Padaria do João',
+      website: 'www.padariadojoao.com'
+    },
+    banners: [
+      'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=200&fit=crop',
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=200&fit=crop'
+    ],
+    profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+  }
+
+  const products = [
+    {
+      id: 1,
+      name: 'Pão Francês Artesanal',
+      description: 'Pão francês tradicional feito com ingredientes selecionados',
+      price: 'R$ 0,80',
+      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=200&fit=crop'
+    },
+    {
+      id: 2,
+      name: 'Bolo de Chocolate',
+      description: 'Bolo de chocolate caseiro com cobertura de ganache',
+      price: 'R$ 25,00',
+      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&h=200&fit=crop'
+    },
+    {
+      id: 3,
+      name: 'Coxinha de Frango',
+      description: 'Coxinha crocante com recheio de frango temperado',
+      price: 'R$ 4,50',
+      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop'
+    },
+    {
+      id: 4,
+      name: 'Café Especial',
+      description: 'Café torrado na hora, grãos selecionados',
+      price: 'R$ 3,50',
+      image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=200&fit=crop'
+    }
+  ]
+
+  const nextBanner = () => {
+    setCurrentBannerIndex((prev) => (prev + 1) % profile.banners.length)
+  }
+
+  const prevBanner = () => {
+    setCurrentBannerIndex((prev) => (prev - 1 + profile.banners.length) % profile.banners.length)
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Carrossel de Banners */}
+        <div className="relative mb-8">
+          <div className="relative overflow-hidden rounded-lg">
+            <img
+              src={profile.banners[currentBannerIndex]}
+              alt={`Banner ${currentBannerIndex + 1}`}
+              className="w-full h-64 object-cover transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+            
+            {/* Navegação do Carrossel */}
+            <button
+              onClick={prevBanner}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            
+            <button
+              onClick={nextBanner}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            
+            {/* Indicadores */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+              {profile.banners.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentBannerIndex(index)}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    index === currentBannerIndex 
+                      ? 'bg-white' 
+                      : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Informações do Perfil */}
+        <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Foto de Perfil */}
+            <div className="flex-shrink-0">
+              <img
+                src={profile.profileImage}
+                alt={profile.name}
+                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+              />
+            </div>
+
+            {/* Informações */}
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {profile.name}
+              </h1>
+              
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="flex items-center space-x-1">
+                  <Star className="h-5 w-5 text-yellow-400 fill-current" />
+                  <span className="font-medium text-gray-900">{profile.rating}</span>
+                  <span className="text-gray-600">({profile.reviews} avaliações)</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span>{profile.location}</span>
+                </div>
+              </div>
+
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                {profile.description}
+              </p>
+
+              {/* Contato */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="flex items-center space-x-2">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-700">{profile.phone}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <span className="text-gray-700">{profile.email}</span>
+                </div>
+              </div>
+
+              {/* Redes Sociais */}
+              <div className="flex space-x-4">
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <Instagram className="h-4 w-4" />
+                  <span>Instagram</span>
+                </Button>
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <Facebook className="h-4 w-4" />
+                  <span>Facebook</span>
+                </Button>
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <Globe className="h-4 w-4" />
+                  <span>Website</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        {/* Catálogo de Produtos */}
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Nossos Produtos
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <div key={product.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    {product.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-3">
+                    {product.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-blue-600">
+                      {product.price}
+                    </span>
+                    <Button size="sm">
+                      Ver Detalhes
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default PerfilPublico

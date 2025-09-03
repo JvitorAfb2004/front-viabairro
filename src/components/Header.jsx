@@ -1,0 +1,300 @@
+import { Search, MapPin, User, LogIn, Menu, X, Home, Briefcase, Star, LogOut, Settings } from 'lucide-react'
+import { Button } from './ui/button'
+import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+
+const Header = () => {
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      navigate(`/buscar?q=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handlePainelClick = () => {
+    if (isAdmin()) {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  const navigationItems = [
+    { name: 'Início', icon: Home, path: '/' },
+    { name: 'Buscar', icon: Search, path: '/buscar' },
+    { name: 'Anunciar', icon: Briefcase, path: '/dashboard' },
+  ];
+  return (
+    <>
+      <header className="bg-[#1a1b1b] shadow-sm sticky top-0 z-50 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <div 
+              className="flex items-center cursor-pointer"
+              onClick={() => navigate('/')}
+            >
+              <img 
+                src="/logo.png" 
+                alt="Via Bairro" 
+                className="h-12 w-auto"
+              />
+            </div>
+
+            {/* Navigation Desktop */}
+            <nav className="hidden lg:flex items-center space-x-6">
+              {navigationItems.map((item, index) => (
+                <button
+                  key={item.name}
+                  onClick={() => navigate(item.path)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span className="font-medium">{item.name}</span>
+                </button>
+              ))}
+            </nav>
+
+            {/* Search Bar */}
+            <div className="hidden md:flex flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <div className="bg-gray-800 rounded-lg border border-gray-600">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar produtos, serviços..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="w-full pl-12 pr-12 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg bg-[#f59820] text-white hover:bg-[#e8891a] transition-colors"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons Desktop */}
+            <div className="hidden lg:flex items-center space-x-3">
+              {isAuthenticated() ? (
+                <>
+                  {/* Usuário logado */}
+                  <div className="flex items-center space-x-2 text-gray-300">
+                    <img 
+                      src={user.avatar} 
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <span className="text-sm font-medium">{user.name}</span>
+                  </div>
+                  
+                  <Button 
+                    className="flex items-center space-x-2 bg-[#f59820] hover:bg-[#e8891a] text-white font-semibold"
+                    onClick={handlePainelClick}
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Painel</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center space-x-2 text-gray-300 hover:text-white hover:bg-gray-800"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sair</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Usuário não logado */}
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center space-x-2 text-gray-300 hover:text-white hover:bg-gray-800"
+                    onClick={() => navigate('/login')}
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Entrar</span>
+                  </Button>
+                  
+                  <Button 
+                    className="flex items-center space-x-2 bg-[#f59820] hover:bg-[#e8891a] text-white font-semibold"
+                    onClick={() => navigate('/cadastro')}
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Cadastrar</span>
+                  </Button>
+                  
+                  <Button 
+                    className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    <Star className="h-4 w-4" />
+                    <span className="hidden xl:inline">Anunciar</span>
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="lg:hidden p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="absolute top-16 left-0 right-0 bg-[#1a1b1b] border-b border-gray-700 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-6 space-y-6">
+              {/* Mobile Search */}
+              <div className="relative">
+                <div className="bg-gray-800 rounded-lg border border-gray-600">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar produtos, serviços..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="w-full pl-12 pr-12 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg bg-[#f59820] text-white"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Navigation */}
+              <nav className="space-y-2">
+                {navigationItems.map((item, index) => (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      navigate(item.path);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-3 w-full p-3 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.name}</span>
+                  </button>
+                ))}
+              </nav>
+
+              {/* Mobile Action Buttons */}
+              <div className="space-y-3 pt-4 border-t border-gray-700">
+                {isAuthenticated() ? (
+                  <>
+                    {/* Usuário logado - Mobile */}
+                    <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+                      <img 
+                        src={user.avatar} 
+                        alt={user.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="text-white font-medium">{user.name}</p>
+                        <p className="text-gray-400 text-sm">{user.email}</p>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full flex items-center justify-center space-x-2 bg-[#f59820] hover:bg-[#e8891a] text-white font-semibold py-3"
+                      onClick={() => {
+                        handlePainelClick();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <Settings className="h-5 w-5" />
+                      <span>Painel</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="w-full flex items-center justify-center space-x-2 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white py-3"
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-5 w-5" />
+                      <span>Sair</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {/* Usuário não logado - Mobile */}
+                    <Button 
+                      className="w-full flex items-center justify-center space-x-2 bg-[#f59820] hover:bg-[#e8891a] text-white font-semibold py-3"
+                      onClick={() => {
+                        navigate('/cadastro');
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogIn className="h-5 w-5" />
+                      <span>Cadastrar Grátis</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="w-full flex items-center justify-center space-x-2 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white py-3"
+                      onClick={() => {
+                        navigate('/login');
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <User className="h-5 w-5" />
+                      <span>Fazer Login</span>
+                    </Button>
+                    
+                    <Button 
+                      className="w-full flex items-center justify-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3"
+                      onClick={() => {
+                        navigate('/dashboard');
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <Star className="h-5 w-5" />
+                      <span>Anunciar Negócio</span>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+export default Header
