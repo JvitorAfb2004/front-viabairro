@@ -19,8 +19,7 @@ const AdminNav = () => {
     { path: '/admin/usuarios', label: 'Usuários', icon: Users },
     { path: '/admin/anuncios', label: 'Anúncios', icon: Megaphone },
     { path: '/admin/planos', label: 'Planos', icon: CreditCard },
-    { path: '/admin/configuracoes', label: 'Configurações', icon: Settings }
-  ];
+    ];
 
   return (
     <motion.nav 

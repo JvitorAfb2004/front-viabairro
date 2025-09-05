@@ -5,10 +5,13 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
-import { motion } from 'framer-motion';  // Corrigido para a importação correta
+import { motion } from 'framer-motion';
+import { useToast } from '../contexts/ToastContext';
+import authService from '../services/authService';
 
 const RecuperarSenha = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
@@ -43,12 +46,19 @@ const RecuperarSenha = () => {
     setIsLoading(true);
     
     try {
-      // Simular envio de email
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await authService.forgotPassword(email);
       
-      setIsEmailSent(true);
+      if (response.sucesso) {
+        setIsEmailSent(true);
+        showSuccess('Email de recuperação enviado com sucesso!');
+      } else {
+        showError(response.mensagem || 'Erro ao enviar email de recuperação');
+        setErrors({ general: response.mensagem || 'Erro ao enviar email de recuperação' });
+      }
     } catch (error) {
-      setErrors({ general: 'Erro ao enviar email. Tente novamente.' });
+      const errorMessage = error.message || 'Erro ao enviar email. Tente novamente.';
+      showError(errorMessage);
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -58,13 +68,18 @@ const RecuperarSenha = () => {
     setIsLoading(true);
     
     try {
-      // Simular reenvio de email
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.forgotPassword(email);
       
-      // Mostrar mensagem de sucesso
-      alert('Email reenviado com sucesso!');
+      if (response.sucesso) {
+        showSuccess('Email reenviado com sucesso!');
+      } else {
+        showError(response.mensagem || 'Erro ao reenviar email');
+        setErrors({ general: response.mensagem || 'Erro ao reenviar email' });
+      }
     } catch (error) {
-      setErrors({ general: 'Erro ao reenviar email. Tente novamente.' });
+      const errorMessage = error.message || 'Erro ao reenviar email. Tente novamente.';
+      showError(errorMessage);
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +159,7 @@ const RecuperarSenha = () => {
             {/* Logo */}
             <div className="text-center">
               <img 
-                src="/logo.png" 
+                src="/logo-bg-white.png" 
                 alt="Via Bairro" 
                 className="h-16 w-auto mx-auto mb-4"
               />
@@ -236,7 +251,7 @@ const RecuperarSenha = () => {
         {/* Logo */}
         <div className="text-center">
           <img 
-            src="/logo.png" 
+            src="/logo-bg-white.png" 
             alt="Via Bairro" 
             className="h-16 w-auto mx-auto mb-4"
           />

@@ -13,8 +13,6 @@ const FiltrosBusca = ({ onFiltrosChange, filtrosIniciais = {} }) => {
     categoria: filtrosIniciais.categoria || '',
     precoMin: filtrosIniciais.precoMin || '',
     precoMax: filtrosIniciais.precoMax || '',
-    cidade: filtrosIniciais.cidade || '',
-    bairro: filtrosIniciais.bairro || '',
     ordenacao: filtrosIniciais.ordenacao || 'relevancia',
     ...filtrosIniciais
   });
@@ -36,31 +34,6 @@ const FiltrosBusca = ({ onFiltrosChange, filtrosIniciais = {} }) => {
     'Outros'
   ];
 
-  const cidades = [
-    'São Paulo',
-    'Rio de Janeiro',
-    'Belo Horizonte',
-    'Salvador',
-    'Brasília',
-    'Fortaleza',
-    'Manaus',
-    'Curitiba',
-    'Recife',
-    'Porto Alegre'
-  ];
-
-  const bairros = [
-    'Centro',
-    'Vila Madalena',
-    'Pinheiros',
-    'Itaim Bibi',
-    'Jardins',
-    'Moema',
-    'Vila Olímpia',
-    'Brooklin',
-    'Santo André',
-    'São Bernardo'
-  ];
 
   const opcoesOrdenacao = [
     { value: 'relevancia', label: 'Mais Relevante' },
@@ -92,10 +65,6 @@ const FiltrosBusca = ({ onFiltrosChange, filtrosIniciais = {} }) => {
     switch (campo) {
       case 'categoria':
         return `Categoria: ${valor}`;
-      case 'cidade':
-        return `Cidade: ${valor}`;
-      case 'bairro':
-        return `Bairro: ${valor}`;
       case 'precoMin':
         return `Preço mínimo: R$ ${valor}`;
       case 'precoMax':
@@ -117,8 +86,6 @@ const FiltrosBusca = ({ onFiltrosChange, filtrosIniciais = {} }) => {
       categoria: '',
       precoMin: '',
       precoMax: '',
-      cidade: '',
-      bairro: '',
       ordenacao: 'relevancia'
     };
     setFiltros(filtrosLimpos);
@@ -231,44 +198,6 @@ const FiltrosBusca = ({ onFiltrosChange, filtrosIniciais = {} }) => {
           </div>
         </div>
 
-        {/* Localização */}
-        <div>
-          <Label>Localização</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="cidade" className="text-xs">Cidade</Label>
-              <Select value={filtros.cidade || "all"} onValueChange={(valor) => handleFiltroChange('cidade', valor === "all" ? "" : valor)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Cidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as cidades</SelectItem>
-                  {cidades.map((cidade) => (
-                    <SelectItem key={cidade} value={cidade}>
-                      {cidade}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="bairro" className="text-xs">Bairro</Label>
-              <Select value={filtros.bairro || "all"} onValueChange={(valor) => handleFiltroChange('bairro', valor === "all" ? "" : valor)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Bairro" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os bairros</SelectItem>
-                  {bairros.map((bairro) => (
-                    <SelectItem key={bairro} value={bairro}>
-                      {bairro}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
 
         {/* Ordenação */}
         <div>

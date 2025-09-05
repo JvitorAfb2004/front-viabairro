@@ -1,52 +1,56 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Edit, Trash2, Eye, EyeOff, AlertTriangle } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, EyeOff, AlertTriangle, Package, Calendar, DollarSign, Lock, ExternalLink } from 'lucide-react'
 import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Badge } from '../../components/ui/badge'
 import Dialog from '../../components/ui/dialog'
+import itemService from '../../services/itemService'
+import { useToast } from '../../contexts/ToastContext'
+import { useSubscription } from '../../hooks/useSubscription'
 
 const MeusAnuncios = () => {
   const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
+  const { canCreateAds, loading: loadingSubscription } = useSubscription()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogType, setDialogType] = useState('') // 'desativar' ou 'excluir'
   const [anuncioSelecionado, setAnuncioSelecionado] = useState(null)
-  const [anuncios] = useState([
-    {
-      id: 1,
-      titulo: 'Pão Francês Artesanal',
-      categoria: 'Alimentação',
-      status: 'ativo',
-      visualizacoes: 245,
-      dataCriacao: '2024-01-15',
-      imagem: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=200&fit=crop'
-    },
-    {
-      id: 2,
-      titulo: 'Bolo de Chocolate Caseiro',
-      categoria: 'Alimentação',
-      status: 'ativo',
-      visualizacoes: 189,
-      dataCriacao: '2024-01-10',
-      imagem: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&h=200&fit=crop'
-    },
-    {
-      id: 3,
-      titulo: 'Coxinha de Frango',
-      categoria: 'Alimentação',
-      status: 'inativo',
-      visualizacoes: 67,
-      dataCriacao: '2024-01-05',
-      imagem: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop'
-    }
-  ])
+  const [anuncios, setAnuncios] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const planoAtual = {
-    nome: 'Plano Anual',
-    limiteAnuncios: 10,
-    anunciosUsados: 3
-  }
+  // Carregar anúncios do usuário
+  useEffect(() => {
+    const carregarAnuncios = async () => {
+      try {
+        setLoading(true)
+        const response = await itemService.getMeusItens()
+        console.log('Resposta da API:', response) // Debug
+        if (response && response.sucesso) {
+          // O backend retorna dados.itens, não dados diretamente
+          const dadosAnuncios = Array.isArray(response.dados?.itens) ? response.dados.itens : []
+          setAnuncios(dadosAnuncios)
+        } else {
+          setAnuncios([])
+        }
+      } catch (error) {
+        console.error('Erro ao carregar anúncios:', error)
+        showError('Erro ao carregar anúncios')
+        setAnuncios([]) // Garantir que seja um array mesmo em caso de erro
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    carregarAnuncios()
+  }, [])
 
   const handleEditar = (id) => {
     navigate(`/dashboard/criar-anuncio?edit=${id}`)
+  }
+
+  const handleVerAnuncio = (anuncio) => {
+    navigate(`/anuncio/${anuncio.slug}`)
   }
 
   const handleExcluir = (anuncio) => {
@@ -61,21 +65,46 @@ const MeusAnuncios = () => {
     setDialogOpen(true)
   }
 
-  const confirmarAcao = () => {
-    if (dialogType === 'excluir') {
-      console.log('Excluir anúncio:', anuncioSelecionado.id)
-      // Aqui você implementaria a lógica de exclusão
-    } else if (dialogType === 'desativar') {
-      console.log('Alterar status do anúncio:', anuncioSelecionado.id)
-      // Aqui você implementaria a lógica de desativação
+  const confirmarAcao = async () => {
+    try {
+      if (dialogType === 'excluir') {
+        await itemService.deletarItem(anuncioSelecionado.id)
+        setAnuncios(prev => prev.filter(anuncio => anuncio.id !== anuncioSelecionado.id))
+        showSuccess('Anúncio excluído com sucesso!')
+      } else if (dialogType === 'desativar') {
+        const novoStatus = !anuncioSelecionado.ativo
+        await itemService.atualizarItem(anuncioSelecionado.id, { ativo: novoStatus })
+        setAnuncios(prev => prev.map(anuncio => 
+          anuncio.id === anuncioSelecionado.id 
+            ? { ...anuncio, ativo: novoStatus }
+            : anuncio
+        ))
+        showSuccess(`Anúncio ${novoStatus ? 'ativado' : 'desativado'} com sucesso!`)
+      }
+    } catch (error) {
+      showError(error.message || 'Erro ao executar ação')
+    } finally {
+      setDialogOpen(false)
+      setAnuncioSelecionado(null)
+      setDialogType('')
     }
-    setDialogOpen(false)
-    setAnuncioSelecionado(null)
-    setDialogType('')
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-[#f59820] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando anúncios...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -88,38 +117,30 @@ const MeusAnuncios = () => {
           </div>
           <Button 
             className="flex items-center space-x-2"
-            onClick={() => navigate('/dashboard/criar-anuncio')}
+            onClick={() => {
+              if (canCreateAds) {
+                navigate('/dashboard/criar-anuncio')
+              } else {
+                navigate('/dashboard/pagamento')
+              }
+            }}
+            variant={canCreateAds ? "default" : "outline"}
           >
-            <Plus className="h-4 w-4" />
-            <span>Adicionar Anúncio</span>
+            {canCreateAds ? (
+              <>
+                <Plus className="h-4 w-4" />
+                <span>Adicionar Anúncio</span>
+              </>
+            ) : (
+              <>
+                <Lock className="h-4 w-4" />
+                <span>Assinar para Criar Anúncios</span>
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      {/* Resumo do Plano */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-blue-900">
-              {planoAtual.nome}
-            </h3>
-            <p className="text-blue-700">
-              {planoAtual.anunciosUsados} de {planoAtual.limiteAnuncios} anúncios utilizados
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-blue-900">
-              {planoAtual.anunciosUsados}/{planoAtual.limiteAnuncios}
-            </div>
-            <div className="w-32 bg-blue-200 rounded-full h-2 mt-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full" 
-                style={{ width: `${(planoAtual.anunciosUsados / planoAtual.limiteAnuncios) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Lista de Anúncios */}
       <div className="bg-white rounded-lg shadow-sm">
@@ -130,7 +151,7 @@ const MeusAnuncios = () => {
         </div>
 
         <div className="divide-y divide-gray-200">
-          {anuncios.map((anuncio) => (
+          {Array.isArray(anuncios) && anuncios.map((anuncio) => (
             <div key={anuncio.id} className="p-6 hover:bg-gray-50">
               <div className="flex items-center space-x-6">
                 <img
@@ -147,57 +168,76 @@ const MeusAnuncios = () => {
                       </h3>
                       <p className="text-gray-600 mb-2">{anuncio.categoria}</p>
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span>Criado em: {new Date(anuncio.dataCriacao).toLocaleDateString('pt-BR')}</span>
+                        <span>Criado em: {new Date(anuncio.createdAt).toLocaleDateString('pt-BR')}</span>
                         <span>{anuncio.visualizacoes} visualizações</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-2">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        anuncio.status === 'ativo' 
+                        anuncio.ativo === true 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {anuncio.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                        {anuncio.ativo === true ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                {/* Botões de ação - responsivos */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
+                  {/* Botão Ver Anúncio - sempre visível */}
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleToggleStatus(anuncio)}
-                    className="flex items-center space-x-1"
+                    onClick={() => handleVerAnuncio(anuncio)}
+                    className="flex items-center justify-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border-blue-200"
                   >
-                    {anuncio.status === 'ativo' ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                    <span>{anuncio.status === 'ativo' ? 'Desativar' : 'Ativar'}</span>
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="hidden sm:inline">Ver Anúncio</span>
+                    <span className="sm:hidden">Ver</span>
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditar(anuncio.id)}
-                    className="flex items-center space-x-1"
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span>Editar</span>
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleExcluir(anuncio)}
-                    className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Excluir</span>
-                  </Button>
+                  {/* Botões em linha no desktop, empilhados no mobile */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleStatus(anuncio)}
+                      className="flex items-center justify-center space-x-1"
+                    >
+                      {anuncio.ativo === true ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                      <span className="hidden sm:inline">{anuncio.ativo === true ? 'Desativar' : 'Ativar'}</span>
+                      <span className="sm:hidden">{anuncio.ativo === true ? 'Desativar' : 'Ativar'}</span>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditar(anuncio.id)}
+                      className="flex items-center justify-center space-x-1"
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="hidden sm:inline">Editar</span>
+                      <span className="sm:hidden">Editar</span>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExcluir(anuncio)}
+                      className="flex items-center justify-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Excluir</span>
+                      <span className="sm:hidden">Excluir</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -247,7 +287,7 @@ const MeusAnuncios = () => {
           <p className="text-gray-600">
             {dialogType === 'excluir' 
               ? 'Tem certeza que deseja excluir este anúncio? Esta ação não pode ser desfeita.'
-              : `Tem certeza que deseja ${anuncioSelecionado?.status === 'ativo' ? 'desativar' : 'ativar'} este anúncio?`
+              : `Tem certeza que deseja ${anuncioSelecionado?.ativo === true ? 'desativar' : 'ativar'} este anúncio?`
             }
           </p>
           

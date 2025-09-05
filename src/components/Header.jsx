@@ -63,7 +63,7 @@ const Header = () => {
                 <button
                   key={item.name}
                   onClick={() => navigate(item.path)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                  className="flex cursor-pointer items-center space-x-2 px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                 >
                   <item.icon className="w-4 h-4" />
                   <span className="font-medium">{item.name}</span>
@@ -86,7 +86,7 @@ const Header = () => {
                   />
                   <button
                     onClick={handleSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg bg-[#f59820] text-white hover:bg-[#e8891a] transition-colors"
+                    className="absolute cursor-pointer right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg bg-[#f59820] text-white hover:bg-[#e8891a] transition-colors"
                   >
                     <Search className="h-4 w-4" />
                   </button>
@@ -101,11 +101,11 @@ const Header = () => {
                   {/* Usuário logado */}
                   <div className="flex items-center space-x-2 text-gray-300">
                     <img 
-                      src={user.avatar} 
-                      alt={user.name}
+                      src={user?.foto_perfil || '/favicon.ico'} 
+                      alt={user?.nome || 'Usuário'}
                       className="w-8 h-8 rounded-full object-cover"
                     />
-                    <span className="text-sm font-medium">{user.name}</span>
+                    <span className="text-sm font-medium">{user?.nome || 'Usuário'}</span>
                   </div>
                   
                   <Button 
@@ -217,13 +217,13 @@ const Header = () => {
                     {/* Usuário logado - Mobile */}
                     <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
                       <img 
-                        src={user.avatar} 
-                        alt={user.name}
+                        src={user?.foto_perfil || '/favicon.ico'} 
+                        alt={user?.nome || 'Usuário'}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                       <div>
-                        <p className="text-white font-medium">{user.name}</p>
-                        <p className="text-gray-400 text-sm">{user.email}</p>
+                        <p className="text-white font-medium">{user?.nome || 'Usuário'}</p>
+                        <p className="text-gray-400 text-sm">{user?.email || ''}</p>
                       </div>
                     </div>
                     

@@ -22,3 +22,4 @@ export const usePreventScroll = (isOpen) => {
 }
 
 export default usePreventScroll
+

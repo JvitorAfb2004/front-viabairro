@@ -4,10 +4,14 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Chrome, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Phone } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 const Cadastro = () => {
   const navigate = useNavigate();
+  const { register, loading } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -17,8 +21,6 @@ const Cadastro = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleInputChange = (e) => {
@@ -98,23 +100,28 @@ const Cadastro = () => {
     e.preventDefault();
     
     if (!validateForm()) return;
-
-    setIsLoading(true);
     
     try {
-      // Simular cadastro
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Redirecionar para login
-      navigate('/login', { 
-        state: { 
-          message: 'Cadastro realizado com sucesso! Faça login para continuar.' 
-        }
+      const result = await register({
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone,
+        senha: formData.password
       });
+      
+      if (result.success) {
+        showSuccess(result.message || 'Conta criada com sucesso! Verifique seu email para ativar a conta.');
+        navigate('/login');
+      } else {
+        const errorMessage = result.error || 'Erro ao criar conta';
+        showError(errorMessage);
+        setErrors({ general: errorMessage });
+      }
     } catch (error) {
-      setErrors({ general: 'Erro ao criar conta. Tente novamente.' });
-    } finally {
-      setIsLoading(false);
+      const errorMessage = error.message || 'Erro ao criar conta. Tente novamente.';
+      console.error('Erro no cadastro:', error);
+      showError(errorMessage);
+      setErrors({ general: errorMessage });
     }
   };
 
@@ -298,9 +305,9 @@ const Cadastro = () => {
                 <Button 
                   type="submit" 
                   className="w-full h-11 bg-black hover:bg-gray-800 text-white font-medium"
-                  disabled={isLoading}
+                  disabled={loading}
                 >
-                  {isLoading ? (
+                  {loading ? (
                     <div className="flex items-center justify-center">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                       Criando conta...
@@ -310,23 +317,6 @@ const Cadastro = () => {
                   )}
                 </Button>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">ou</span>
-                  </div>
-                </div>
-
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full h-11 border-gray-300 hover:bg-gray-50"
-                >
-                  <Chrome className="w-4 h-4 mr-2" />
-                  Continuar com Google
-                </Button>
               </form>
 
               <div className="text-center pt-4">

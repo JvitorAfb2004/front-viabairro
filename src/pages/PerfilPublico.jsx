@@ -1,68 +1,87 @@
-import { useState } from 'react'
-import { MapPin, Star, Phone, Mail, Instagram, Facebook, Globe, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import { MapPin, Star, Phone, Mail, Instagram, Facebook, Globe, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '../components/ui/button'
+import publicService from '../services/publicService'
 
 const PerfilPublico = () => {
+  const { id } = useParams()
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
-  
-  const profile = {
-    name: 'Padaria do João',
-    description: 'Padaria tradicional familiar há mais de 20 anos no bairro. Especializada em pães artesanais, doces caseiros e salgados frescos. Atendemos com carinho e qualidade!',
-    location: 'Vila Madalena, São Paulo - SP',
-    rating: 4.8,
-    reviews: 127,
-    phone: '(11) 99999-9999',
-    email: 'contato@padariadojoao.com',
-    socialMedia: {
-      instagram: '@padariadojoao',
-      facebook: 'Padaria do João',
-      website: 'www.padariadojoao.com'
-    },
-    banners: [
-      'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=200&fit=crop',
-      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=200&fit=crop'
-    ],
-    profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-  }
+  const [profile, setProfile] = useState(null)
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const products = [
-    {
-      id: 1,
-      name: 'Pão Francês Artesanal',
-      description: 'Pão francês tradicional feito com ingredientes selecionados',
-      price: 'R$ 0,80',
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=200&fit=crop'
-    },
-    {
-      id: 2,
-      name: 'Bolo de Chocolate',
-      description: 'Bolo de chocolate caseiro com cobertura de ganache',
-      price: 'R$ 25,00',
-      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&h=200&fit=crop'
-    },
-    {
-      id: 3,
-      name: 'Coxinha de Frango',
-      description: 'Coxinha crocante com recheio de frango temperado',
-      price: 'R$ 4,50',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop'
-    },
-    {
-      id: 4,
-      name: 'Café Especial',
-      description: 'Café torrado na hora, grãos selecionados',
-      price: 'R$ 3,50',
-      image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=200&fit=crop'
+  useEffect(() => {
+    const carregarPerfil = async () => {
+      try {
+        setLoading(true)
+        const response = await publicService.getPerfilPublico(id)
+        if (response.sucesso) {
+          const usuario = response.dados.usuario
+          setProfile({
+            name: usuario.nome,
+            description: usuario.descricao || 'Descrição não disponível',
+            location: `${usuario.cidade || 'Cidade não informada'}, ${usuario.estado || 'Estado não informado'}`,
+            rating: 4.8,
+            reviews: 127,
+            phone: '(11) 99999-9999',
+            email: 'contato@exemplo.com',
+            socialMedia: usuario.redes_sociais || {},
+            banners: usuario.banners || ['/logo.png'],
+            profileImage: usuario.foto_perfil || '/logo.png'
+          })
+          setProducts(usuario.itens || [])
+        }
+      } catch (error) {
+        console.error('Erro ao carregar perfil:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    if (id) {
+      carregarPerfil()
+    }
+  }, [id])
 
   const nextBanner = () => {
-    setCurrentBannerIndex((prev) => (prev + 1) % profile.banners.length)
+    if (profile) {
+      setCurrentBannerIndex((prev) => (prev + 1) % profile.banners.length)
+    }
   }
 
   const prevBanner = () => {
-    setCurrentBannerIndex((prev) => (prev - 1 + profile.banners.length) % profile.banners.length)
+    if (profile) {
+      setCurrentBannerIndex((prev) => (prev - 1 + profile.banners.length) % profile.banners.length)
+    }
+  }
+
+  const formatarPreco = (preco) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(preco)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Carregando perfil...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Perfil não encontrado</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -187,20 +206,20 @@ const PerfilPublico = () => {
             {products.map((product) => (
               <div key={product.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                 <img
-                  src={product.image}
-                  alt={product.name}
+                  src={product.imagem || '/logo.png'}
+                  alt={product.titulo}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 mb-2">
-                    {product.name}
+                    {product.titulo}
                   </h3>
                   <p className="text-gray-600 text-sm mb-3">
-                    {product.description}
+                    {product.descricao}
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-blue-600">
-                      {product.price}
+                      {formatarPreco(product.preco)}
                     </span>
                     <Button size="sm">
                       Ver Detalhes

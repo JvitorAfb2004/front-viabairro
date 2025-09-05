@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
-import { MapPin, Calendar, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { MapPin, Calendar, Eye, Heart, MessageCircle, Share2, Phone, Mail, User } from 'lucide-react';
 
 const AnuncioCard = ({ anuncio, onView, onLike, onShare, onContact }) => {
   const formatPrice = (price) => {
@@ -72,10 +72,35 @@ const AnuncioCard = ({ anuncio, onView, onLike, onShare, onContact }) => {
         {/* Descrição */}
         <p className="text-gray-700 line-clamp-3">{anuncio.descricao}</p>
 
-        {/* Localização */}
-        <div className="flex items-center text-sm text-gray-600">
-          <MapPin className="h-4 w-4 mr-1" />
-          <span>{anuncio.localizacao.bairro}, {anuncio.localizacao.cidade}</span>
+        {/* Informações do Anunciante */}
+        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+          <div className="flex items-center space-x-2">
+            <User className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">{anuncio.usuario.nome}</span>
+          </div>
+          
+          {anuncio.usuario.cidade && anuncio.usuario.estado && (
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">
+                {anuncio.usuario.cidade}, {anuncio.usuario.estado}
+              </span>
+            </div>
+          )}
+          
+          {anuncio.usuario.telefone && (
+            <div className="flex items-center space-x-2">
+              <Phone className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">{anuncio.usuario.telefone}</span>
+            </div>
+          )}
+          
+          {anuncio.usuario.email && (
+            <div className="flex items-center space-x-2">
+              <Mail className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">{anuncio.usuario.email}</span>
+            </div>
+          )}
         </div>
 
         {/* Preço */}
@@ -141,7 +166,7 @@ const AnuncioCard = ({ anuncio, onView, onLike, onShare, onContact }) => {
               Contatar
             </Button>
             <Button
-              onClick={() => onView && onView(anuncio.id)}
+              onClick={() => onView && onView(anuncio.slug)}
               size="sm"
             >
               Ver Detalhes

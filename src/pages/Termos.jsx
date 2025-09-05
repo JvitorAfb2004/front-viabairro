@@ -185,13 +185,73 @@ const Termos = () => {
             </CardContent>
           </Card>
 
-          <Card className="mt-6">
+          <Card className="mt-6" id="cookies">
             <CardHeader>
-              <CardTitle>8. Contato</CardTitle>
+              <CardTitle>8. Política de Cookies</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-700">
-                Se você tiver dúvidas sobre estes Termos de Uso, entre em contato conosco:
+                Utilizamos cookies e tecnologias similares para melhorar sua experiência em nosso site, 
+                analisar o uso da plataforma e personalizar conteúdo e anúncios.
+              </p>
+              
+              <h4 className="font-semibold text-gray-800 mt-6 mb-3">Tipos de Cookies que Utilizamos:</h4>
+              
+              <div className="space-y-4">
+                <div className="border-l-4 border-green-500 pl-4">
+                  <h5 className="font-medium text-gray-800">Cookies Essenciais</h5>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Necessários para o funcionamento básico do site. Incluem cookies de sessão, 
+                    autenticação e segurança. Estes cookies não podem ser desabilitados.
+                  </p>
+                </div>
+                
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <h5 className="font-medium text-gray-800">Cookies Funcionais</h5>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Permitem funcionalidades aprimoradas e personalização, como lembrar suas 
+                    preferências de idioma e região.
+                  </p>
+                </div>
+                
+                <div className="border-l-4 border-purple-500 pl-4">
+                  <h5 className="font-medium text-gray-800">Cookies de Análise</h5>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Ajudam-nos a entender como os visitantes interagem com o site, fornecendo 
+                    informações sobre as páginas visitadas e tempo de permanência.
+                  </p>
+                </div>
+                
+                <div className="border-l-4 border-orange-500 pl-4">
+                  <h5 className="font-medium text-gray-800">Cookies de Marketing</h5>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Usados para exibir anúncios relevantes e medir a eficácia das campanhas publicitárias.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg mt-6">
+                <h5 className="font-medium text-gray-800 mb-2">Como Gerenciar Seus Cookies</h5>
+                <p className="text-sm text-gray-600 mb-3">
+                  Você pode gerenciar suas preferências de cookies a qualquer momento através do 
+                  banner de cookies que aparece na primeira visita ao site, ou clicando no botão 
+                  "Gerenciar Cookies" no rodapé.
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Importante:</strong> Desabilitar certos cookies pode afetar a funcionalidade 
+                  do site e sua experiência de navegação.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>9. Contato</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-700">
+                Se você tiver dúvidas sobre estes Termos de Uso ou nossa Política de Cookies, entre em contato conosco:
               </p>
               <ul className="list-disc list-inside space-y-2 text-gray-700">
                 <li>Email: contato@viabairro.com</li>

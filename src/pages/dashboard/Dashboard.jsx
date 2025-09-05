@@ -26,104 +26,78 @@ import {
   DollarSign
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { mockAnuncios } from '../../data/mockData';
+import { useAuth } from '../../contexts/AuthContext';
+import userService from '../../services/userService';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [usuario, setUsuario] = useState({
-    nome: 'João Silva',
-    email: 'joao.silva@email.com',
-    telefone: '(11) 99999-9999',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    membro_desde: '2024-01-15',
-    plano: 'Premium',
-    avatar: null
+    nome: user?.nome || 'Usuário',
+    email: user?.email || '',
+    telefone: user?.telefone || '',
+    cidade: user?.cidade || '',
+    estado: user?.estado || '',
+    membro_desde: user?.createdAt || new Date().toISOString().split('T')[0],
+    plano: user?.plano || 'Básico',
+    avatar: user?.foto_perfil || null
   });
 
   const [estatisticas, setEstatisticas] = useState({
-    anuncios_ativos: 12,
-    anuncios_vendidos: 8,
-    visualizacoes_total: 1247,
-    mensagens_nao_lidas: 5,
-    favoritos_recebidos: 23,
-    avaliacao_media: 4.8,
-    vendas_mes: 2450.00
+    anuncios_ativos: 0,
+    anuncios_vendidos: 0,
+    visualizacoes_total: 0,
+    mensagens_nao_lidas: 0,
+    favoritos_recebidos: 0,
+    avaliacao_media: 0,
+    vendas_mes: 0
   });
 
   const [anunciosRecentes, setAnunciosRecentes] = useState([]);
-  const [mensagensRecentes, setMensagensRecentes] = useState([
-    {
-      id: 1,
-      remetente: 'Maria Santos',
-      anuncio: 'iPhone 13 Pro Max',
-      mensagem: 'Ainda está disponível?',
-      tempo: '2 min atrás',
-      nao_lida: true
-    },
-    {
-      id: 2,
-      remetente: 'Carlos Lima',
-      anuncio: 'Notebook Dell',
-      mensagem: 'Aceita R$ 2.800?',
-      tempo: '15 min atrás',
-      nao_lida: true
-    },
-    {
-      id: 3,
-      remetente: 'Ana Costa',
-      anuncio: 'Bicicleta Speed',
-      mensagem: 'Obrigada pela compra!',
-      tempo: '1 hora atrás',
-      nao_lida: false
-    }
-  ]);
-
-  const [atividadesRecentes, setAtividadesRecentes] = useState([
-    {
-      id: 1,
-      tipo: 'venda',
-      descricao: 'iPhone 13 Pro Max foi vendido',
-      valor: 'R$ 4.200,00',
-      tempo: '2 horas atrás',
-      icon: CheckCircle,
-      cor: 'text-green-600'
-    },
-    {
-      id: 2,
-      tipo: 'anuncio',
-      descricao: 'Novo anúncio publicado: Notebook Dell',
-      tempo: '1 dia atrás',
-      icon: Plus,
-      cor: 'text-blue-600'
-    },
-    {
-      id: 3,
-      tipo: 'avaliacao',
-      descricao: 'Recebeu avaliação 5 estrelas',
-      tempo: '2 dias atrás',
-      icon: Star,
-      cor: 'text-yellow-600'
-    },
-    {
-      id: 4,
-      tipo: 'alerta',
-      descricao: 'Anúncio expira em 3 dias',
-      tempo: '3 dias atrás',
-      icon: AlertCircle,
-      cor: 'text-orange-600'
-    }
-  ]);
+  const [mensagensRecentes, setMensagensRecentes] = useState([]);
+  const [atividadesRecentes, setAtividadesRecentes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simular carregamento dos anúncios do usuário
-    const anunciosUsuario = mockAnuncios.slice(0, 4).map(anuncio => ({
-      ...anuncio,
-      status: Math.random() > 0.5 ? 'ativo' : 'vendido',
-      visualizacoes: Math.floor(Math.random() * 200) + 50,
-      mensagens: Math.floor(Math.random() * 10) + 1
-    }));
-    setAnunciosRecentes(anunciosUsuario);
-  }, []);
+    const carregarDados = async () => {
+      try {
+        setLoading(true);
+        
+        // Atualizar dados do usuário (já vem do AuthContext)
+        if (user) {
+          setUsuario({
+            nome: user.nome || 'Usuário',
+            email: user.email || '',
+            telefone: user.telefone || '',
+            cidade: user.cidade || '',
+            estado: user.estado || '',
+            membro_desde: user.createdAt || new Date().toISOString().split('T')[0],
+            plano: user.plano || 'Básico',
+            avatar: user.foto_perfil || null
+          });
+        }
+
+        // Carregar estatísticas do usuário
+        try {
+          const response = await userService.getEstatisticas();
+          if (response.sucesso) {
+            setEstatisticas(response.dados);
+          }
+        } catch (error) {
+          console.log('Erro ao carregar estatísticas:', error);
+        }
+
+        // TODO: Implementar carregamento de anúncios, mensagens e atividades
+        // quando as APIs estiverem prontas
+        
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarDados();
+  }, [user]);
 
   const cartoes = [
     {
@@ -188,6 +162,17 @@ const Dashboard = () => {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#f59820] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Background com gradiente e padrões */}
@@ -227,7 +212,7 @@ const Dashboard = () => {
                 </Badge>
                 <div className="flex items-center text-sm text-slate-600">
                   <MapPin className="w-4 h-4 mr-1" />
-                  {usuario.cidade}, {usuario.estado}
+                  {usuario.cidade && usuario.estado ? `${usuario.cidade}, ${usuario.estado}` : 'Localização não informada'}
                 </div>
               </div>
             </div>

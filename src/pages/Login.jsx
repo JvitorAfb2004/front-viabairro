@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Eye, EyeOff, Mail, Lock, ArrowLeft, Chrome } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import authService from '../services/authService';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,7 +18,20 @@ const Login = () => {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Carregar email salvo quando o componente for montado
+  useEffect(() => {
+    const savedEmail = authService.getRememberedEmail();
+    if (savedEmail) {
+      setFormData(prev => ({
+        ...prev,
+        email: savedEmail
+      }));
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,18 +73,21 @@ const Login = () => {
     if (!validateForm()) return;
     
     try {
-      const result = await login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password, rememberMe);
       
       if (result.success) {
         showSuccess('Login realizado com sucesso!');
-        navigate('/dashboard');
+        navigate('/');
       } else {
-        showError(result.error || 'Erro ao fazer login');
-        setErrors({ general: result.error || 'Erro ao fazer login' });
+        const errorMessage = result.error || 'Erro ao fazer login';
+        showError(errorMessage);
+        setErrors({ general: errorMessage });
       }
     } catch (error) {
-      showError('Erro ao fazer login. Tente novamente.');
-      setErrors({ general: 'Erro ao fazer login. Tente novamente.' });
+      const errorMessage = error.message || 'Erro ao fazer login. Tente novamente.';
+      console.error('Erro no login:', error);
+      showError(errorMessage);
+      setErrors({ general: errorMessage });
     }
   };
 
@@ -167,6 +184,8 @@ const Login = () => {
                     <input
                       id="remember"
                       type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
                       className="rounded border-gray-300 text-black focus:ring-black"
                     />
                     <Label htmlFor="remember" className="text-sm text-gray-600">
@@ -196,23 +215,6 @@ const Login = () => {
                   )}
                 </Button>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">ou</span>
-                  </div>
-                </div>
-
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full h-11 border-gray-300 hover:bg-gray-50"
-                >
-                  <Chrome className="w-4 h-4 mr-2" />
-                  Continuar com Google
-                </Button>
               </form>
 
               <div className="text-center pt-4">

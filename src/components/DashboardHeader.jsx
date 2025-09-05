@@ -2,12 +2,14 @@ import { User, LogOut } from 'lucide-react'
 import { Button } from './ui/button'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const DashboardHeader = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    // Simular logout
+    logout();
     navigate('/');
   };
 
@@ -43,8 +45,16 @@ const DashboardHeader = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <div className="flex items-center space-x-2 text-white">
-              <User className="h-5 w-5" />
-              <span className="text-sm font-medium">João Vitor</span>
+              {user?.foto_perfil ? (
+                <img 
+                  src={user.foto_perfil} 
+                  alt={user.nome}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <User className="h-5 w-5" />
+              )}
+              <span className="text-sm font-medium">{user?.nome || 'Usuário'}</span>
             </div>
             
             <Button 

@@ -2,52 +2,83 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import { ArrowLeft, MapPin, Clock, Eye, Heart, Share2, MessageCircle, Phone, Mail, Star, Shield, Calendar, User, Camera, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Eye, Share2, MessageCircle, Phone, Mail, Calendar, User, Camera, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { anuncios } from '../data/mockData';
+import publicService from '../services/publicService';
 
 const DetalhesAnuncio = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [anuncio, setAnuncio] = useState(null);
   const [imagemAtual, setImagemAtual] = useState(0);
-  const [isFavorito, setIsFavorito] = useState(false);
   const [mostrarTelefone, setMostrarTelefone] = useState(false);
   const [anunciosRelacionados, setAnunciosRelacionados] = useState([]);
+  const [anunciosDoUsuario, setAnunciosDoUsuario] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Buscar anúncio por ID
-    const anuncioEncontrado = anuncios.find(a => a.id === parseInt(id));
-    if (anuncioEncontrado) {
-      setAnuncio(anuncioEncontrado);
-      
-      // Buscar anúncios relacionados (mesma categoria, exceto o atual)
-      const relacionados = anuncios
-        .filter(a => a.categoria === anuncioEncontrado.categoria && a.id !== anuncioEncontrado.id)
-        .slice(0, 3);
-      setAnunciosRelacionados(relacionados);
-    } else {
-      navigate('/buscar');
-    }
-  }, [id, navigate]);
+    const carregarAnuncio = async () => {
+      try {
+        setLoading(true);
+        
+        // Buscar anúncio por slug
+        const response = await publicService.getAnuncioPublico(slug);
+        if (response.sucesso) {
+          const anuncioData = response.dados.item;
+          setAnuncio(anuncioData);
+          
+          // Buscar anúncios relacionados por categoria
+          const relacionadosResponse = await publicService.getAnunciosRelacionados(
+            anuncioData.categoria, 
+            anuncioData.id, 
+            3
+          );
+          if (relacionadosResponse.sucesso) {
+            setAnunciosRelacionados(relacionadosResponse.dados.anuncios);
+          }
 
-  if (!anuncio) {
+          // Buscar anúncios do mesmo usuário
+          const anunciosUsuarioResponse = await publicService.getAnunciosDoUsuario(
+            anuncioData.usuarioId,
+            anuncioData.id,
+            5
+          );
+          if (anunciosUsuarioResponse.sucesso) {
+            setAnunciosDoUsuario(anunciosUsuarioResponse.dados.anuncios);
+          }
+        } else {
+          navigate('/buscar');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar anúncio:', error);
+        navigate('/buscar');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarAnuncio();
+  }, [slug, navigate]);
+
+  if (loading || !anuncio) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Carregando anúncio...</p>
         </div>
       </div>
     );
   }
 
+  const imagens = anuncio.imagem ? [anuncio.imagem] : ['/logo.png'];
+  
   const proximaImagem = () => {
-    setImagemAtual((prev) => (prev + 1) % anuncio.imagens.length);
+    setImagemAtual((prev) => (prev + 1) % imagens.length);
   };
 
   const imagemAnterior = () => {
-    setImagemAtual((prev) => (prev - 1 + anuncio.imagens.length) % anuncio.imagens.length);
+    setImagemAtual((prev) => (prev - 1 + imagens.length) % imagens.length);
   };
 
   const compartilhar = async () => {
@@ -83,6 +114,16 @@ const DetalhesAnuncio = () => {
     }).format(preco);
   };
 
+  const gerarLinkWhatsApp = (telefone) => {
+    // Remove todos os caracteres não numéricos
+    const numeroLimpo = telefone.replace(/\D/g, '');
+    
+    // Adiciona +55 se não começar com 55
+    const numeroCompleto = numeroLimpo.startsWith('55') ? numeroLimpo : `55${numeroLimpo}`;
+    
+    return `https://wa.me/${numeroCompleto}`;
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Background com gradiente e padrões */}
@@ -114,14 +155,6 @@ const DetalhesAnuncio = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsFavorito(!isFavorito)}
-                className={`${isFavorito ? 'text-red-500 hover:text-red-600' : 'text-slate-600 hover:text-red-500'} transition-colors duration-200`}
-              >
-                <Heart className={`w-5 h-5 ${isFavorito ? 'fill-current' : ''}`} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
                 onClick={compartilhar}
                 className="text-slate-600 hover:text-orange-600 transition-colors duration-200"
               >
@@ -144,13 +177,13 @@ const DetalhesAnuncio = () => {
                     <div className="relative">
                       <div className="aspect-video bg-slate-100 relative overflow-hidden">
                         <img
-                          src={anuncio.imagens[imagemAtual]}
+                          src={imagens[imagemAtual]}
                           alt={`${anuncio.titulo} - Imagem ${imagemAtual + 1}`}
                           className="w-full h-full object-cover"
                         />
                         
                         {/* Navegação das imagens */}
-                        {anuncio.imagens.length > 1 && (
+                        {imagens.length > 1 && (
                           <>
                             <button
                               onClick={imagemAnterior}
@@ -169,15 +202,15 @@ const DetalhesAnuncio = () => {
                         
                         {/* Indicador de imagem */}
                         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                          {imagemAtual + 1} / {anuncio.imagens.length}
+                          {imagemAtual + 1} / {imagens.length}
                         </div>
                       </div>
                       
                       {/* Miniaturas */}
-                      {anuncio.imagens.length > 1 && (
+                      {imagens.length > 1 && (
                         <div className="p-4">
                           <div className="flex space-x-2 overflow-x-auto">
-                            {anuncio.imagens.map((imagem, index) => (
+                            {imagens.map((imagem, index) => (
                               <button
                                 key={index}
                                 onClick={() => setImagemAtual(index)}
@@ -221,20 +254,22 @@ const DetalhesAnuncio = () => {
                       
                       <h1 className="text-3xl font-bold text-slate-800 mb-4">{anuncio.titulo}</h1>
                       
-                      <div className="flex items-center text-slate-600 mb-4">
-                        <MapPin className="w-5 h-5 mr-2 text-orange-500" />
-                        <span>{anuncio.localizacao}</span>
-                      </div>
+                      {anuncio.usuario.cidade && anuncio.usuario.estado && (
+                        <div className="flex items-center text-slate-600 mb-4">
+                          <MapPin className="w-5 h-5 mr-2 text-orange-500" />
+                          <span>{anuncio.usuario.cidade}, {anuncio.usuario.estado}</span>
+                        </div>
+                      )}
                       
-                      <div className="flex items-center justify-between">
-                        <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-600">
-                          {formatarPreco(anuncio.preco)}
+                                              <div className="flex items-center justify-between">
+                          <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-600">
+                            {formatarPreco(anuncio.preco)}
+                          </div>
+                          <div className="flex items-center text-slate-500 text-sm">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            Publicado em {formatarData(anuncio.createdAt)}
+                          </div>
                         </div>
-                        <div className="flex items-center text-slate-500 text-sm">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Publicado em {formatarData(anuncio.dataPublicacao)}
-                        </div>
-                      </div>
                     </div>
 
                     <div className="border-t border-slate-200 pt-6">
@@ -277,64 +312,106 @@ const DetalhesAnuncio = () => {
                       <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-3">
                         <User className="w-8 h-8 text-white" />
                       </div>
-                      <h3 className="text-lg font-bold text-slate-800">{anuncio.vendedor.nome}</h3>
-                      <div className="flex items-center justify-center mt-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < anuncio.vendedor.avaliacao
-                                  ? 'text-yellow-400 fill-current'
-                                  : 'text-slate-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-slate-600 text-sm ml-2">
-                          ({anuncio.vendedor.totalAvaliacoes} avaliações)
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-center mt-2 text-sm text-slate-600">
-                        <Shield className="w-4 h-4 mr-1 text-green-500" />
-                        Perfil verificado
-                      </div>
+                      <h3 className="text-lg font-bold text-slate-800">{anuncio.usuario.nome}</h3>
                     </div>
 
                     <div className="space-y-3">
-                      <Button
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
-                      >
-                        <MessageCircle className="w-5 h-5 mr-2" />
-                        Enviar Mensagem
-                      </Button>
+                      {anuncio.usuario.telefone && (
+                        <Button
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
+                          onClick={() => window.open(gerarLinkWhatsApp(anuncio.usuario.telefone), '_blank')}
+                        >
+                          <MessageCircle className="w-5 h-5 mr-2" />
+                          Enviar WhatsApp
+                        </Button>
+                      )}
                       
-                      <Button
-                        variant="outline"
-                        onClick={() => setMostrarTelefone(!mostrarTelefone)}
-                        className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 py-3 rounded-xl font-semibold transition-all duration-200"
-                      >
-                        <Phone className="w-5 h-5 mr-2" />
-                        {mostrarTelefone ? anuncio.vendedor.telefone : 'Ver Telefone'}
-                      </Button>
+                      {anuncio.usuario.telefone && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setMostrarTelefone(!mostrarTelefone)}
+                          className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 py-3 rounded-xl font-semibold transition-all duration-200"
+                        >
+                          <Phone className="w-5 h-5 mr-2" />
+                          {mostrarTelefone ? anuncio.usuario.telefone : 'Ver Telefone'}
+                        </Button>
+                      )}
                       
-                      <Button
-                        variant="outline"
-                        className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 py-3 rounded-xl font-semibold transition-all duration-200"
-                      >
-                        <Mail className="w-5 h-5 mr-2" />
-                        Enviar Email
-                      </Button>
+                      {anuncio.usuario.email && (
+                        <Button
+                          variant="outline"
+                          className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 py-3 rounded-xl font-semibold transition-all duration-200"
+                        >
+                          <Mail className="w-5 h-5 mr-2" />
+                          {anuncio.usuario.email}
+                        </Button>
+                      )}
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-slate-200">
-                      <div className="text-center text-sm text-slate-600">
-                        <div className="flex items-center justify-center mb-2">
-                          <Clock className="w-4 h-4 mr-1" />
-                          Membro desde {formatarData(anuncio.vendedor.membroDesde)}
-                        </div>
-                        <div>
-                          {anuncio.vendedor.totalAnuncios} anúncios publicados
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-slate-800 mb-3">Informações do Anunciante</h4>
+                        
+                        {anuncio.usuario.descricao && (
+                          <div className="text-sm text-slate-600">
+                            <p className="font-medium text-slate-700 mb-1">Sobre:</p>
+                            <p className="leading-relaxed">{anuncio.usuario.descricao}</p>
+                          </div>
+                        )}
+                        
+                        {anuncio.usuario.endereco && (
+                          <div className="text-sm text-slate-600">
+                            <p className="font-medium text-slate-700 mb-1">Endereço:</p>
+                            <p className="flex items-center">
+                              <MapPin className="w-4 h-4 mr-1" />
+                              {anuncio.usuario.endereco} - {anuncio.usuario.cidade} - {anuncio.usuario.estado}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {anuncio.usuario.redes_sociais && (
+                          <div className="text-sm text-slate-600">
+                            <p className="font-medium text-slate-700 mb-2">Redes Sociais:</p>
+                            <div className="flex space-x-2">
+                              {anuncio.usuario.redes_sociais.instagram && (
+                                <a 
+                                  href={anuncio.usuario.redes_sociais.instagram} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-orange-600 hover:text-orange-700"
+                                >
+                                  Instagram
+                                </a>
+                              )}
+                              {anuncio.usuario.redes_sociais.facebook && (
+                                <a 
+                                  href={anuncio.usuario.redes_sociais.facebook} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-orange-600 hover:text-orange-700"
+                                >
+                                  Facebook
+                                </a>
+                              )}
+                              {anuncio.usuario.redes_sociais.website && (
+                                <a 
+                                  href={anuncio.usuario.redes_sociais.website} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-orange-600 hover:text-orange-700"
+                                >
+                                  Website
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="text-center text-sm text-slate-600 pt-3 border-t border-slate-200">
+                          <div className="flex items-center justify-center mb-2">
+                            <Clock className="w-4 h-4 mr-1" />
+                            Membro desde {formatarData(anuncio.usuario.createdAt)}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -351,17 +428,17 @@ const DetalhesAnuncio = () => {
                 >
                   <Card className="bg-white/70 backdrop-blur-sm shadow-xl border border-white/20">
                     <CardContent className="p-6">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4">Anúncios Relacionados</h3>
+                      <h3 className="text-lg font-bold text-slate-800 mb-4">Outros Anúncios de {anuncio.usuario.nome}</h3>
                       <div className="space-y-4">
                         {anunciosRelacionados.map((anuncioRel) => (
                           <Link
                             key={anuncioRel.id}
-                            to={`/anuncio/${anuncioRel.id}`}
+                            to={`/anuncio/${anuncioRel.slug}`}
                             className="block hover:bg-slate-50 p-3 rounded-lg transition-colors duration-200"
                           >
                             <div className="flex space-x-3">
                               <img
-                                src={anuncioRel.imagens[0]}
+                                src={anuncioRel.imagem || '/logo.png'}
                                 alt={anuncioRel.titulo}
                                 className="w-16 h-16 object-cover rounded-lg"
                               />
@@ -372,10 +449,12 @@ const DetalhesAnuncio = () => {
                                 <p className="text-orange-600 font-bold text-sm">
                                   {formatarPreco(anuncioRel.preco)}
                                 </p>
-                                <p className="text-slate-500 text-xs flex items-center">
-                                  <MapPin className="w-3 h-3 mr-1" />
-                                  {anuncioRel.localizacao}
-                                </p>
+                                {anuncioRel.usuario.cidade && anuncioRel.usuario.estado && (
+                                  <p className="text-slate-500 text-xs flex items-center">
+                                    <MapPin className="w-3 h-3 mr-1" />
+                                    {anuncioRel.usuario.cidade}, {anuncioRel.usuario.estado}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </Link>
@@ -387,6 +466,84 @@ const DetalhesAnuncio = () => {
               )}
             </div>
           </div>
+
+          {/* Seção de Anúncios do Mesmo Usuário */}
+          {anunciosDoUsuario.length > 0 && (
+            <motion.div
+              className="mt-12"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-slate-800 mb-2">
+                  Outros Anúncios de {anuncio.usuario.nome}
+                </h2>
+                <p className="text-slate-600">
+                  Confira mais anúncios deste anunciante
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                {anunciosDoUsuario.map((anuncioUsuario) => (
+                  <motion.div
+                    key={anuncioUsuario.id}
+                    whileHover={{ y: -5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Link to={`/anuncio/${anuncioUsuario.slug}`}>
+                      <Card className="bg-white/70 backdrop-blur-sm shadow-lg border border-white/20 overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                        <CardContent className="p-0">
+                          <div className="aspect-square bg-slate-100 relative overflow-hidden">
+                            <img
+                              src={anuncioUsuario.imagem || '/logo.png'}
+                              alt={anuncioUsuario.titulo}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute top-2 left-2">
+                              <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                {anuncioUsuario.categoria}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="p-4">
+                            <h3 className="font-bold text-slate-800 text-sm mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors duration-200">
+                              {anuncioUsuario.titulo}
+                            </h3>
+                            
+                            <div className="text-orange-600 font-bold text-lg mb-2">
+                              {formatarPreco(anuncioUsuario.preco)}
+                            </div>
+                            
+                            {anuncioUsuario.usuario.cidade && anuncioUsuario.usuario.estado && (
+                              <div className="flex items-center text-slate-500 text-xs">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                <span className="truncate">
+                                  {anuncioUsuario.usuario.cidade}, {anuncioUsuario.usuario.estado}
+                                </span>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
+                              <div className="flex items-center">
+                                <Eye className="w-3 h-3 mr-1" />
+                                {anuncioUsuario.visualizacoes}
+                              </div>
+                              <div className="flex items-center">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                {formatarData(anuncioUsuario.createdAt)}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>

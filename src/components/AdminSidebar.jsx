@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { BarChart3, Users, Package, CreditCard, Settings } from 'lucide-react'
+import { BarChart3, Users, Package, CreditCard } from 'lucide-react'
 
 const AdminSidebar = () => {
   const menuItems = [
@@ -7,7 +7,6 @@ const AdminSidebar = () => {
     { path: '/admin/usuarios', label: 'Usuários', icon: Users },
     { path: '/admin/anuncios', label: 'Anúncios', icon: Package },
     { path: '/admin/planos', label: 'Planos', icon: CreditCard },
-    { path: '/admin/configuracoes', label: 'Configurações', icon: Settings },
   ]
 
   return (

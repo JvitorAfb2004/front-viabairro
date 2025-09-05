@@ -1,90 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import authService from '../services/authService.js';
+import userService from '../services/userService.js';
 
 const AuthContext = createContext();
-
-// Fake user accounts for demonstration
-const FAKE_USERS = [
-  {
-    id: 1,
-    name: 'João Silva',
-    email: 'joao@exemplo.com',
-    password: '123456',
-    phone: '(11) 99999-1111',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    role: 'user',
-    plan: 'Premium',
-    createdAt: '2024-01-15',
-    address: {
-      street: 'Rua das Flores, 123',
-      neighborhood: 'Vila Madalena',
-      city: 'São Paulo',
-      state: 'SP',
-      zipCode: '01234-567'
-    },
-    business: {
-      name: 'João Restaurante',
-      category: 'Alimentação',
-      description: 'Restaurante familiar com pratos caseiros'
-    }
-  },
-  {
-    id: 2,
-    name: 'Maria Santos',
-    email: 'maria@exemplo.com',
-    password: '123456',
-    phone: '(11) 98888-2222',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-    role: 'user',
-    plan: 'Básico',
-    createdAt: '2024-01-10',
-    address: {
-      street: 'Av. Paulista, 456',
-      neighborhood: 'Bela Vista',
-      city: 'São Paulo',
-      state: 'SP',
-      zipCode: '01310-100'
-    },
-    business: {
-      name: 'Salão Maria Beleza',
-      category: 'Beleza & Estética',
-      description: 'Salão de beleza especializado em cabelos cacheados'
-    }
-  },
-  {
-    id: 3,
-    name: 'Admin',
-    email: 'admin@viabairro.com',
-    password: 'admin123',
-    phone: '(11) 97777-3333',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    role: 'admin',
-    plan: 'Admin',
-    createdAt: '2024-01-01'
-  },
-  {
-    id: 4,
-    name: 'Demo User',
-    email: 'demo@demo.com',
-    password: 'demo123',
-    phone: '(11) 96666-4444',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop&crop=face',
-    role: 'user',
-    plan: 'Empresarial',
-    createdAt: '2024-01-20',
-    address: {
-      street: 'Rua Demo, 789',
-      neighborhood: 'Centro',
-      city: 'Rio de Janeiro',
-      state: 'RJ',
-      zipCode: '20000-000'
-    },
-    business: {
-      name: 'Demo Business',
-      category: 'Tecnologia',
-      description: 'Empresa de demonstração para testes'
-    }
-  }
-];
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -92,101 +10,98 @@ export const AuthProvider = ({ children }) => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('viabairro_user');
-    if (savedUser) {
+    const checkAuth = async () => {
       try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
+        if (authService.isAuthenticated()) {
+          // Sempre buscar dados do usuário da API
+          const response = await authService.getProfile();
+          if (response.sucesso) {
+            setUser(response.dados.usuario);
+          } else {
+            // Se não conseguir obter dados, fazer logout
+            authService.logout();
+            setUser(null);
+          }
+        }
       } catch (error) {
-        console.error('Error parsing saved user data:', error);
-        localStorage.removeItem('viabairro_user');
+        console.error('Erro ao verificar autenticação:', error);
+        // Se houver erro, limpar dados locais
+        authService.logout();
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, senha, rememberMe = false) => {
     setLoading(true);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const foundUser = FAKE_USERS.find(
-      user => user.email === email && user.password === password
-    );
-    
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('viabairro_user', JSON.stringify(userWithoutPassword));
+    try {
+      const response = await authService.login(email, senha, rememberMe);
+      
+      if (response.sucesso) {
+        // Buscar dados completos do usuário após login
+        const userResponse = await authService.getProfile();
+        if (userResponse.sucesso) {
+          setUser(userResponse.dados.usuario);
+          return { success: true, user: userResponse.dados.usuario };
+        } else {
+          return { success: false, error: 'Erro ao obter dados do usuário' };
+        }
+      } else {
+        return { success: false, error: response.mensagem || 'Erro no login' };
+      }
+    } catch (error) {
+      return { success: false, error: error.message || 'Erro ao fazer login' };
+    } finally {
       setLoading(false);
-      return { success: true, user: userWithoutPassword };
-    } else {
-      setLoading(false);
-      return { success: false, error: 'Email ou senha incorretos' };
     }
   };
 
   const register = async (userData) => {
     setLoading(true);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Check if email already exists
-    const existingUser = FAKE_USERS.find(user => user.email === userData.email);
-    
-    if (existingUser) {
-      setLoading(false);
-      return { success: false, error: 'Este email já está cadastrado' };
-    }
-    
-    // Create new user
-    const newUser = {
-      id: FAKE_USERS.length + 1,
-      name: userData.nome,
-      email: userData.email,
-      phone: userData.telefone,
-      password: userData.password,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.nome)}&background=000&color=fff`,
-      role: 'user',
-      plan: 'Básico',
-      createdAt: new Date().toISOString().split('T')[0],
-      address: {
-        street: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        zipCode: ''
-      },
-      business: {
-        name: '',
-        category: '',
-        description: ''
+    try {
+      const response = await authService.register(userData);
+      
+      if (response.sucesso) {
+        return { success: true, message: response.mensagem };
+      } else {
+        return { success: false, error: response.mensagem || 'Erro no registro' };
       }
-    };
-    
-    // Add to fake users array (in real app, this would be API call)
-    FAKE_USERS.push(newUser);
-    
-    setLoading(false);
-    return { success: true, user: newUser };
+    } catch (error) {
+      console.error('Erro no registro:', error);
+      return { success: false, error: error.message || 'Erro ao registrar usuário' };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
-    localStorage.removeItem('viabairro_user');
   };
 
-  const updateUser = (updatedData) => {
-    const updatedUser = { ...user, ...updatedData };
-    setUser(updatedUser);
-    localStorage.setItem('viabairro_user', JSON.stringify(updatedUser));
-    return updatedUser;
+  const updateUser = async (updatedData) => {
+    try {
+      // Atualizar no servidor
+      const response = await userService.updateProfile(updatedData);
+      if (response.sucesso) {
+        setUser(response.dados.usuario);
+        return response.dados.usuario;
+      } else {
+        throw new Error(response.mensagem || 'Erro ao atualizar perfil');
+      }
+    } catch (error) {
+      throw error;
+    }
   };
 
   const isAuthenticated = () => {
-    return !!user;
+    return authService.isAuthenticated() && !!user;
   };
 
   const isAdmin = () => {
@@ -201,8 +116,7 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     loading,
     isAuthenticated,
-    isAdmin,
-    fakeUsers: FAKE_USERS // For demo purposes
+    isAdmin
   };
 
   return (

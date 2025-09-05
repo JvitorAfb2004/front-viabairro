@@ -1,24 +1,149 @@
-import { useState } from 'react'
-import { Upload, Camera, Link, Save, Eye } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Upload, Camera, Link, Save, Eye, Loader2, Building, Globe, MapPin } from 'lucide-react'
 import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
+import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import userService from '../../services/userService'
+import ibgeService from '../../services/ibgeService'
 
 const PerfilPublico = () => {
+  const { user } = useAuth()
+  const { showSuccess, showError } = useToast()
   const [formData, setFormData] = useState({
-    nome: 'Padaria do João',
-    descricao: 'Padaria tradicional familiar há mais de 20 anos no bairro. Especializada em pães artesanais, doces caseiros e salgados frescos.',
-    telefone: '(11) 99999-9999',
-    email: 'contato@padariadojoao.com',
-    endereco: 'Rua das Flores, 123 - Vila Madalena',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    instagram: '@padariadojoao',
-    facebook: 'Padaria do João',
-    website: 'www.padariadojoao.com',
-    fotoPerfil: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    banner1: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&h=300&fit=crop',
-    banner2: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=200&fit=crop',
-    banner3: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=200&fit=crop'
+    nome: '',
+    descricao: '',
+    telefone: '',
+    email: '',
+    endereco: '',
+    cidade: '',
+    estado: '',
+    instagram: '',
+    facebook: '',
+    website: '',
+    fotoPerfil: '',
+    banner1: '',
+    banner2: '',
+    banner3: ''
   })
+  const [banners, setBanners] = useState({
+    banner1: '',
+    banner2: '',
+    banner3: ''
+  })
+  const [loading, setLoading] = useState(false)
+  const [loadingEstados, setLoadingEstados] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [estados, setEstados] = useState([])
+  const [estadosFiltrados, setEstadosFiltrados] = useState([])
+  const [mostrarSugestoesEstado, setMostrarSugestoesEstado] = useState(false)
+  const [carregandoDadosIniciais, setCarregandoDadosIniciais] = useState(false)
+  const [dadosIniciaisCarregados, setDadosIniciaisCarregados] = useState(false)
+  const [bannerAtual, setBannerAtual] = useState(0)
+
+  // Carregar estados do IBGE
+  useEffect(() => {
+    const carregarEstados = async () => {
+      setLoadingEstados(true)
+      try {
+        const estadosData = await ibgeService.getEstados()
+        setEstados(estadosData)
+      } catch (error) {
+        console.error('Erro ao carregar estados:', error)
+        showError('Erro ao carregar lista de estados')
+      } finally {
+        setLoadingEstados(false)
+      }
+    }
+    
+    carregarEstados()
+  }, [showError])
+
+  // Carregar dados do perfil público
+  useEffect(() => {
+    const carregarPerfil = async () => {
+      try {
+        setLoading(true)
+        setCarregandoDadosIniciais(true)
+        const response = await userService.getPerfilPublico(user?.id)
+        if (response.sucesso) {
+          const dados = response.dados
+          
+          // Converter sigla do estado para nome para exibição
+          let nomeEstado = dados.estado || user?.estado || ''
+          if (nomeEstado && estados.length > 0) {
+            // Verificar se é sigla (2 caracteres) ou nome
+            if (nomeEstado.length === 2) {
+              const estadoEncontrado = estados.find(e => e.sigla === nomeEstado)
+              if (estadoEncontrado) {
+                nomeEstado = estadoEncontrado.nome
+              }
+            }
+          }
+          
+          // Separar banners para controle independente
+          const bannersData = {
+            banner1: dados.banner1 || '',
+            banner2: dados.banner2 || '',
+            banner3: dados.banner3 || ''
+          }
+          
+          
+          setBanners(bannersData)
+          
+          setFormData({
+            nome: dados.nome || user?.nome || '',
+            descricao: dados.descricao || '',
+            telefone: dados.telefone || user?.telefone || '',
+            email: dados.email || user?.email || '',
+            endereco: dados.endereco || '',
+            cidade: dados.cidade || user?.cidade || '',
+            estado: nomeEstado, // Usar nome para exibição
+            instagram: dados.instagram || '',
+            facebook: dados.facebook || '',
+            website: dados.website || '',
+            fotoPerfil: dados.fotoPerfil || user?.foto_perfil || '',
+            banner1: bannersData.banner1,
+            banner2: bannersData.banner2,
+            banner3: bannersData.banner3
+          })
+        }
+      } catch (error) {
+        console.error('Erro ao carregar perfil público:', error)
+        // Usar dados básicos do usuário se não conseguir carregar
+        let nomeEstado = user?.estado || ''
+        if (nomeEstado && estados.length > 0) {
+          if (nomeEstado.length === 2) {
+            const estadoEncontrado = estados.find(e => e.sigla === nomeEstado)
+            if (estadoEncontrado) {
+              nomeEstado = estadoEncontrado.nome
+            }
+          }
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          nome: user?.nome || '',
+          telefone: user?.telefone || '',
+          email: user?.email || '',
+          cidade: user?.cidade || '',
+          estado: nomeEstado,
+          fotoPerfil: user?.foto_perfil || ''
+        }))
+      } finally {
+        setLoading(false)
+        setCarregandoDadosIniciais(false)
+        setDadosIniciaisCarregados(true)
+      }
+    }
+
+    if (user) {
+      carregarPerfil()
+    }
+  }, [user, estados])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -28,22 +153,148 @@ const PerfilPublico = () => {
     }))
   }
 
-  const handleImageUpload = (field, file) => {
-    // Simular upload de imagem
-    console.log(`Upload ${field}:`, file)
+  const handleEstadoChange = (e) => {
+    const valor = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      estado: valor
+    }));
+
+    // Filtrar estados baseado no que o usuário está digitando
+    if (valor.length > 0) {
+      const filtrados = estados.filter(estado =>
+        estado.nome.toLowerCase().includes(valor.toLowerCase())
+      );
+      setEstadosFiltrados(filtrados.slice(0, 10)); // Limitar a 10 sugestões
+      setMostrarSugestoesEstado(true);
+    } else {
+      setEstadosFiltrados([]);
+      setMostrarSugestoesEstado(false);
+    }
   }
 
-  const handleSubmit = (e) => {
+  const selecionarEstado = (estado) => {
+    setFormData(prev => ({
+      ...prev,
+      estado: estado.nome
+    }));
+    setMostrarSugestoesEstado(false);
+  }
+
+  const proximoBanner = () => {
+    const bannersArray = [banners.banner1, banners.banner2, banners.banner3].filter(Boolean)
+    setBannerAtual((prev) => (prev + 1) % bannersArray.length)
+  }
+
+  const bannerAnterior = () => {
+    const bannersArray = [banners.banner1, banners.banner2, banners.banner3].filter(Boolean)
+    setBannerAtual((prev) => (prev - 1 + bannersArray.length) % bannersArray.length)
+  }
+
+  const handleImageUpload = async (field, file) => {
+    try {
+      setLoading(true)
+      let response
+      
+      if (field === 'fotoPerfil') {
+        response = await userService.uploadFotoPerfil(file)
+      } else if (field.startsWith('banner')) {
+        const bannerIndex = field.replace('banner', '')
+        response = await userService.uploadBanner(file, bannerIndex)
+      }
+      
+      if (response && response.sucesso) {
+        const imageUrl = response.dados.url || response.dados.foto_perfil
+        
+        if (field === 'fotoPerfil') {
+          setFormData(prev => ({
+            ...prev,
+            [field]: imageUrl
+          }))
+        } else if (field.startsWith('banner')) {
+          setBanners(prev => ({
+            ...prev,
+            [field]: imageUrl
+          }))
+          // Não precisamos atualizar formData aqui pois os banners não são enviados nele
+        }
+        
+        showSuccess('Imagem enviada com sucesso!')
+      }
+    } catch (error) {
+      showError(error.message || 'Erro ao fazer upload da imagem')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFileSelect = (field, event) => {
+    const file = event.target.files[0]
+    if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        showError('Por favor, selecione apenas arquivos de imagem')
+        return
+      }
+      
+      // Validar tamanho (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showError('O arquivo deve ter no máximo 5MB')
+        return
+      }
+      
+      handleImageUpload(field, file)
+    }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Perfil público salvo:', formData)
+    
+    try {
+      setLoading(true)
+      
+      // Converter nome do estado para sigla antes de enviar
+      let estadoParaEnviar = formData.estado
+      if (formData.estado) {
+        const estadoEncontrado = estados.find(e => e.nome === formData.estado)
+        if (estadoEncontrado) {
+          estadoParaEnviar = estadoEncontrado.sigla
+        }
+      }
+
+      const dadosParaEnviar = {
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone,
+        endereco: formData.endereco,
+        cidade: formData.cidade,
+        estado: estadoParaEnviar,
+        descricao: formData.descricao,
+        redes_sociais: {
+          instagram: formData.instagram,
+          facebook: formData.facebook,
+          website: formData.website
+        }
+      }
+      
+      const response = await userService.updatePerfilPublico(dadosParaEnviar)
+      if (response.sucesso) {
+        showSuccess('Perfil público atualizado com sucesso!')
+      }
+    } catch (error) {
+      showError(error.message || 'Erro ao atualizar perfil público')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handlePreview = () => {
-    console.log('Visualizar perfil público')
+    // Abrir perfil público em nova aba
+    window.open(`/perfil/${user?.id}`, '_blank')
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -61,281 +312,352 @@ const PerfilPublico = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Informações Básicas */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Informações Básicas
-          </h2>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Building className="h-5 w-5 mr-2" />
+              Informações Básicas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nome do Negócio
-              </label>
-              <input
-                type="text"
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="nome">Nome do Negócio</Label>
+              <Input
+                id="nome"
                 name="nome"
                 value={formData.nome}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descrição
-              </label>
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="descricao">Descrição</Label>
               <textarea
+                id="descricao"
                 name="descricao"
                 value={formData.descricao}
                 onChange={handleInputChange}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="Conte um pouco sobre seu negócio..."
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Telefone
-              </label>
-              <input
-                type="tel"
+            <div className="space-y-2">
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input
+                id="telefone"
                 name="telefone"
+                type="tel"
                 value={formData.telefone}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                E-mail
-              </label>
-              <input
-                type="email"
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mail</Label>
+              <Input
+                id="email"
                 name="email"
+                type="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Endereço
-              </label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="endereco">Endereço</Label>
+              <Input
+                id="endereco"
                 name="endereco"
                 value={formData.endereco}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cidade
-              </label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
                 name="cidade"
                 value={formData.cidade}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2 relative">
+              <Label htmlFor="estado" className="flex items-center">
+                <MapPin className="h-4 w-4 mr-1" />
                 Estado
-              </label>
-              <select
+              </Label>
+              <Input
+                id="estado"
                 name="estado"
                 value={formData.estado}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="SP">São Paulo</option>
-                <option value="RJ">Rio de Janeiro</option>
-                <option value="MG">Minas Gerais</option>
-                {/* Adicionar outros estados */}
-              </select>
+                onChange={handleEstadoChange}
+                onFocus={() => {
+                  if (formData.estado.length > 0) {
+                    setMostrarSugestoesEstado(true);
+                  }
+                }}
+                onBlur={() => {
+                  setTimeout(() => setMostrarSugestoesEstado(false), 200);
+                }}
+                placeholder="Digite o nome do estado"
+              />
+              
+              {/* Sugestões de estados */}
+              {mostrarSugestoesEstado && estadosFiltrados.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {estadosFiltrados.map(estado => (
+                    <div
+                      key={estado.id}
+                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      onClick={() => selecionarEstado(estado)}
+                    >
+                      {estado.nome}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {loadingEstados && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Carregando estados...
+                </div>
+              )}
             </div>
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Foto de Perfil */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Foto de Perfil
-          </h2>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Camera className="h-5 w-5 mr-2" />
+              Foto de Perfil
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
           
           <div className="flex items-center space-x-6">
             <div className="relative">
               <img
-                src={formData.fotoPerfil}
+                src={formData.fotoPerfil || '/favicon.ico'}
                 alt="Foto de perfil"
                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
               />
-              <button
-                type="button"
-                className="absolute -bottom-2 -right-2 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700"
+              <label
+                htmlFor="fotoPerfilInput"
+                className="absolute -bottom-2 -right-2 bg-orange-400 text-white rounded-full p-2 hover:bg-orange-400 cursor-pointer"
               >
                 <Camera className="h-4 w-4" />
-              </button>
+              </label>
+              <input
+                id="fotoPerfilInput"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileSelect('fotoPerfil', e)}
+                className="hidden"
+              />
             </div>
             
             <div>
               <h3 className="font-medium text-gray-900 mb-2">
                 Atualizar Foto
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600">
                 Use uma imagem quadrada para melhor resultado
               </p>
-              <Button variant="outline" type="button" className="flex items-center space-x-2">
-                <Upload className="h-4 w-4" />
-                <span>Escolher Arquivo</span>
-              </Button>
             </div>
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Banners */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Banners
-          </h2>
-          
-          <div className="space-y-6">
-            {/* Banner Principal */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Banner Principal
-              </label>
+        {/* Banners Carrossel */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Globe className="h-5 w-5 mr-2" />
+              Banners
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-2">
+              Resolução recomendada: 1200x400px (3:1). Use imagens horizontais para melhor resultado.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Carrossel de Banners */}
               <div className="relative">
-                <img
-                  src={formData.banner1}
-                  alt="Banner principal"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <button
-                  type="button"
-                  className="absolute top-4 right-4 bg-white bg-opacity-90 text-gray-700 rounded-lg px-3 py-2 flex items-center space-x-2 hover:bg-opacity-100"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span>Alterar</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Banners Secundários */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Banner Secundário 1
-                </label>
-                <div className="relative">
-                  <img
-                    src={formData.banner2}
-                    alt="Banner secundário 1"
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-2 right-2 bg-white bg-opacity-90 text-gray-700 rounded px-2 py-1 text-sm hover:bg-opacity-100"
-                  >
-                    <Upload className="h-3 w-3" />
-                  </button>
+                <div className="relative overflow-hidden rounded-lg">
+                  {(() => {
+                    const bannersArray = [banners.banner1, banners.banner2, banners.banner3].filter(Boolean)
+                    const bannerAtualData = bannersArray[bannerAtual]
+                    
+                    return (
+                      <div className="relative">
+                        <img
+                          src={bannerAtualData || '/logo.png'}
+                          alt={`Banner ${bannerAtual + 1}`}
+                          className="w-full h-64 object-cover"
+                        />
+                        
+                        {/* Controles do carrossel */}
+                        {bannersArray.length > 1 && (
+                          <>
+                            <button
+                              onClick={bannerAnterior}
+                              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={proximoBanner}
+                              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                        
+                        {/* Indicadores */}
+                        {bannersArray.length > 1 && (
+                          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                            {bannersArray.map((_, index) => (
+                              <button
+                                key={index}
+                                onClick={() => setBannerAtual(index)}
+                                className={`w-2 h-2 rounded-full transition-all ${
+                                  index === bannerAtual ? 'bg-white' : 'bg-white bg-opacity-50'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Banner Secundário 2
-                </label>
-                <div className="relative">
-                  <img
-                    src={formData.banner3}
-                    alt="Banner secundário 2"
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-2 right-2 bg-white bg-opacity-90 text-gray-700 rounded px-2 py-1 text-sm hover:bg-opacity-100"
-                  >
-                    <Upload className="h-3 w-3" />
-                  </button>
-                </div>
+              {/* Upload de Banners */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[1, 2, 3].map((bannerIndex) => (
+                  <div key={bannerIndex} className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Banner {bannerIndex}
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-400 transition-colors">
+                      <input
+                        id={`banner${bannerIndex}Input`}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileSelect(`banner${bannerIndex}`, e)}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor={`banner${bannerIndex}Input`}
+                        className="cursor-pointer flex flex-col items-center space-y-2"
+                      >
+                        <Upload className="h-8 w-8 text-gray-400" />
+                        <span className="text-sm text-gray-600">
+                          {banners[`banner${bannerIndex}`] ? 'Alterar Banner' : 'Adicionar Banner'}
+                        </span>
+                        {banners[`banner${bannerIndex}`] && (
+                          <span className="text-xs text-green-600">
+                            ✓ Banner adicionado
+                          </span>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Redes Sociais */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Redes Sociais
-          </h2>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Link className="h-5 w-5 mr-2" />
+              Redes Sociais
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Link className="inline h-4 w-4 mr-1" />
-                Instagram
-              </label>
-              <input
-                type="text"
-                name="instagram"
-                value={formData.instagram}
-                onChange={handleInputChange}
-                placeholder="@seuusuario"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="instagram" className="flex items-center">
+                  <Link className="h-4 w-4 mr-1" />
+                  Instagram
+                </Label>
+                <Input
+                  id="instagram"
+                  name="instagram"
+                  value={formData.instagram}
+                  onChange={handleInputChange}
+                  placeholder="@seuusuario"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Link className="inline h-4 w-4 mr-1" />
-                Facebook
-              </label>
-              <input
-                type="text"
-                name="facebook"
-                value={formData.facebook}
-                onChange={handleInputChange}
-                placeholder="Nome da página"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="facebook" className="flex items-center">
+                  <Link className="h-4 w-4 mr-1" />
+                  Facebook
+                </Label>
+                <Input
+                  id="facebook"
+                  name="facebook"
+                  value={formData.facebook}
+                  onChange={handleInputChange}
+                  placeholder="Nome da página"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Link className="inline h-4 w-4 mr-1" />
-                Website
-              </label>
-              <input
-                type="url"
-                name="website"
-                value={formData.website}
-                onChange={handleInputChange}
-                placeholder="https://seusite.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="website" className="flex items-center">
+                  <Link className="h-4 w-4 mr-1" />
+                  Website
+                </Label>
+                <Input
+                  id="website"
+                  name="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={handleInputChange}
+                  placeholder="https://seusite.com"
+                />
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Botão Salvar */}
-        <div className="flex justify-end">
-          <Button type="submit" className="flex items-center space-x-2">
-            <Save className="h-4 w-4" />
-            <span>Salvar Perfil</span>
-          </Button>
-        </div>
+        <Card>
+          <CardContent className="flex justify-end pt-6">
+            <Button type="submit" className="flex items-center space-x-2" disabled={loading}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              <span>{loading ? 'Salvando...' : 'Salvar Perfil'}</span>
+            </Button>
+          </CardContent>
+        </Card>
       </form>
     </div>
   )

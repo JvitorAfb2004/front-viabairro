@@ -1,86 +1,112 @@
-import { useState } from 'react'
-import { Search, Eye, Edit, Trash2, AlertTriangle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Eye, Trash2, AlertTriangle, Loader2, Package, User, Calendar, MapPin, X, Check } from 'lucide-react'
 import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Badge } from '../../components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import Dialog from '../../components/ui/dialog'
+import adminService from '../../services/adminService'
+import { useToast } from '../../contexts/ToastContext'
 
 const Anuncios = () => {
+  const { showSuccess, showError } = useToast()
+  const [anuncios, setAnuncios] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [anuncioSelecionado, setAnuncioSelecionado] = useState(null)
-
-  const anuncios = [
-    {
-      id: 1,
-      titulo: 'Pão Francês Artesanal',
-      usuario: 'João Vitor',
-      categoria: 'Alimentação',
-      status: 'aprovado',
-      dataCriacao: '2024-01-15',
-      visualizacoes: 245,
-      cidade: 'São Paulo, SP',
-      imagem: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=200&fit=crop'
-    },
-    {
-      id: 2,
-      titulo: 'Barbearia Moderna',
-      usuario: 'Maria Silva',
-      categoria: 'Beleza',
-      status: 'pendente',
-      dataCriacao: '2024-01-18',
-      visualizacoes: 0,
-      cidade: 'Rio de Janeiro, RJ',
-      imagem: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=300&h=200&fit=crop'
-    },
-    {
-      id: 3,
-      titulo: 'Academia Fit',
-      usuario: 'Pedro Costa',
-      categoria: 'Saúde',
-      status: 'rejeitado',
-      dataCriacao: '2024-01-20',
-      visualizacoes: 0,
-      cidade: 'Belo Horizonte, MG',
-      imagem: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop'
-    }
-  ]
-
-  const categories = [
-    'Alimentação', 'Beleza', 'Saúde', 'Educação', 'Tecnologia',
-    'Construção', 'Automóveis', 'Serviços', 'Lazer', 'Outros'
-  ]
-
-  const handleEdit = (id) => {
-    console.log('Editar anúncio:', id)
-  }
-
-  const handleDelete = (anuncio) => {
-    setAnuncioSelecionado(anuncio)
-    setDialogOpen(true)
-  }
-
-  const confirmarExclusao = () => {
-    console.log('Excluir anúncio:', anuncioSelecionado.id)
-    setDialogOpen(false)
-    setAnuncioSelecionado(null)
-  }
-
-  const handleView = (id) => {
-    console.log('Visualizar anúncio:', id)
-  }
-
-  const filteredAnuncios = anuncios.filter(anuncio => {
-    const matchesSearch = anuncio.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         anuncio.usuario.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === '' || anuncio.status === statusFilter
-    const matchesCategory = categoryFilter === '' || anuncio.categoria === categoryFilter
-    return matchesSearch && matchesStatus && matchesCategory
+  const [paginacao, setPaginacao] = useState({
+    pagina: 1,
+    limite: 20,
+    total: 0,
+    totalPaginas: 0
   })
 
+  const carregarAnuncios = async (pagina = 1) => {
+    try {
+      setLoading(true)
+      const params = {
+        search: searchTerm,
+        status: statusFilter,
+        pagina: pagina,
+        limite: paginacao.limite
+      }
+      const response = await adminService.getAnuncios(params)
+      if (response.sucesso) {
+        setAnuncios(response.dados.anuncios || [])
+        setPaginacao({
+          pagina: response.dados.paginacao.pagina,
+          limite: response.dados.paginacao.limite,
+          total: response.dados.paginacao.total,
+          totalPaginas: response.dados.paginacao.totalPaginas
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar anúncios:', error)
+      showError('Erro ao carregar anúncios')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    carregarAnuncios()
+  }, [])
+
+
+  const handleAtivar = async (anuncio) => {
+    try {
+      const response = await adminService.ativarAnuncio(anuncio.id, !anuncio.ativo)
+      if (response.sucesso) {
+        showSuccess(`Anúncio ${anuncio.ativo ? 'desativado' : 'ativado'} com sucesso!`)
+        // Recarregar lista
+        const params = { search: searchTerm, status: statusFilter }
+        const responseLista = await adminService.getAnuncios(params)
+        if (responseLista.sucesso) {
+          setAnuncios(responseLista.dados.anuncios || [])
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao ativar/desativar anúncio:', error)
+      showError('Erro ao ativar/desativar anúncio')
+    }
+  }
+
+  const handleDelete = async (anuncio) => {
+    try {
+      const response = await adminService.excluirAnuncio(anuncio.id)
+      if (response.sucesso) {
+        showSuccess('Anúncio excluído com sucesso!')
+        // Recarregar lista mantendo a página atual
+        carregarAnuncios(paginacao.pagina)
+      }
+    } catch (error) {
+      console.error('Erro ao excluir anúncio:', error)
+      showError('Erro ao excluir anúncio')
+    }
+  }
+
+  const handleView = (anuncio) => {
+    // Abrir anúncio em nova página
+    const slug = anuncio.slug || anuncio.id
+    window.open(`/anuncio/${slug}`, '_blank')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Carregando anúncios...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Gerenciar Anúncios
@@ -101,10 +127,18 @@ const Anuncios = () => {
                 placeholder="Buscar por título ou usuário..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
           </div>
+          
+          <Button 
+            onClick={() => carregarAnuncios(1)}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Buscar
+          </Button>
           
           <div>
             <Select value={statusFilter || "all"} onValueChange={(value) => setStatusFilter(value === "all" ? "" : value)}>
@@ -114,24 +148,7 @@ const Anuncios = () => {
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
-                <SelectItem value="aprovado">Aprovado</SelectItem>
                 <SelectItem value="rejeitado">Rejeitado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Select value={categoryFilter || "all"} onValueChange={(value) => setCategoryFilter(value === "all" ? "" : value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todas as categorias" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as categorias</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
           </div>
@@ -140,7 +157,7 @@ const Anuncios = () => {
 
       {/* Lista de Anúncios */}
       <div className="space-y-4">
-        {filteredAnuncios.map((anuncio) => (
+        {anuncios.map((anuncio) => (
           <div key={anuncio.id} className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex flex-col lg:flex-row gap-6">
               <img
@@ -155,21 +172,18 @@ const Anuncios = () => {
                     {anuncio.titulo}
                   </h3>
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    anuncio.status === 'aprovado' 
+                    anuncio.ativo 
                       ? 'bg-green-100 text-green-800'
-                      : anuncio.status === 'pendente'
-                      ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {anuncio.status === 'aprovado' ? 'Aprovado' :
-                     anuncio.status === 'pendente' ? 'Pendente' : 'Rejeitado'}
+                    {anuncio.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">Usuário:</span> {anuncio.usuario}
+                      <span className="font-medium">Usuário:</span> {anuncio.usuario?.nome || 'N/A'}
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">Categoria:</span> {anuncio.categoria}
@@ -186,7 +200,6 @@ const Anuncios = () => {
                 </div>
                 
                 <p className="text-sm text-gray-600 mb-4">
-                  <span className="font-medium">Localização:</span> {anuncio.cidade}
                 </p>
               </div>
 
@@ -194,7 +207,7 @@ const Anuncios = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleView(anuncio.id)}
+                  onClick={() => handleView(anuncio)}
                   className="flex items-center space-x-1"
                 >
                   <Eye className="h-4 w-4" />
@@ -204,11 +217,24 @@ const Anuncios = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleEdit(anuncio.id)}
-                  className="flex items-center space-x-1"
+                  onClick={() => handleAtivar(anuncio)}
+                  className={`flex items-center space-x-1 ${
+                    anuncio.ativo 
+                      ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50' 
+                      : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                  }`}
                 >
-                  <Edit className="h-4 w-4" />
-                  <span>Editar</span>
+                  {anuncio.ativo ? (
+                    <>
+                      <X className="h-4 w-4" />
+                      <span>Desativar</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      <span>Ativar</span>
+                    </>
+                  )}
                 </Button>
                 
                 <Button
@@ -226,7 +252,7 @@ const Anuncios = () => {
         ))}
       </div>
 
-      {filteredAnuncios.length === 0 && (
+      {anuncios.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <div className="text-gray-400 mb-4">
             <Search className="h-12 w-12 mx-auto" />
@@ -243,16 +269,37 @@ const Anuncios = () => {
       {/* Paginação */}
       <div className="mt-6 flex items-center justify-between">
         <div className="text-sm text-gray-700">
-          Mostrando {filteredAnuncios.length} de {anuncios.length} anúncios
+          Mostrando {anuncios.length} de {paginacao.total} anúncios
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" disabled>
+          <Button 
+            variant="outline" 
+            disabled={paginacao.pagina === 1}
+            onClick={() => carregarAnuncios(paginacao.pagina - 1)}
+          >
             Anterior
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">1</Button>
-          <Button variant="outline">2</Button>
-          <Button variant="outline">3</Button>
-          <Button variant="outline">
+          
+          {/* Botões de página */}
+          {Array.from({ length: Math.min(5, paginacao.totalPaginas) }, (_, i) => {
+            const pagina = i + 1
+            return (
+              <Button
+                key={pagina}
+                variant={pagina === paginacao.pagina ? "default" : "outline"}
+                className={pagina === paginacao.pagina ? "bg-orange-600 hover:bg-orange-700" : ""}
+                onClick={() => carregarAnuncios(pagina)}
+              >
+                {pagina}
+              </Button>
+            )
+          })}
+          
+          <Button 
+            variant="outline"
+            disabled={paginacao.pagina === paginacao.totalPaginas}
+            onClick={() => carregarAnuncios(paginacao.pagina + 1)}
+          >
             Próximo
           </Button>
         </div>
@@ -292,7 +339,10 @@ const Anuncios = () => {
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={confirmarExclusao}
+              onClick={() => {
+                handleDelete(anuncioSelecionado)
+                setDialogOpen(false)
+              }}
             >
               Excluir
             </Button>
