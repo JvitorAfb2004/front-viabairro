@@ -16,7 +16,7 @@ export const WebSocketProvider = ({ children }) => {
       // Aguardar um pouco antes de conectar para garantir que o servidor esteja pronto
       const connectTimeout = setTimeout(() => {
         // Conectar ao WebSocket quando usuário estiver logado
-        const wsUrl = import.meta.env.VITE_WS_URL || (import.meta.env.DEV ? '' : 'http://localhost:3000');
+        const wsUrl = import.meta.env.VITE_WS_URL || (import.meta.env.DEV ? '' : 'https://clientes-backend-viabairro.an7euh.easypanel.host');
         console.log('Tentando conectar ao WebSocket em:', wsUrl || 'URL relativa');
         
         const newSocket = io(wsUrl, {
