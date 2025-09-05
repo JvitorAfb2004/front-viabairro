@@ -9,6 +9,7 @@ import { WebSocketProvider } from "./contexts/WebSocketContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ToastContainer from "./components/Toast";
 import CookieBanner from "./components/CookieBanner";
+import PWAInstallBanner from "./components/PWAInstallBanner";
 
 // Layouts
 import PublicLayout from "./layouts/PublicLayout";
@@ -53,6 +54,7 @@ function App() {
           }}
         >
           <CookieBanner />
+          <PWAInstallBanner />
           <Routes>
             {/* Rotas Públicas */}
             <Route path="/" element={<PublicLayout />}>
