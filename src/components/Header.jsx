@@ -1,4 +1,4 @@
-import { Search, MapPin, User, LogIn, Menu, X, Home, Briefcase, Star, LogOut, Settings } from 'lucide-react'
+import { MapPin, User, LogIn, Menu, X, Home, Briefcase, Star, LogOut, Settings, Search, Plus } from 'lucide-react'
 import { Button } from './ui/button'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
@@ -7,19 +7,9 @@ import { useAuth } from '../contexts/AuthContext'
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   const handleSearch = () => {
-    if (searchTerm.trim()) {
-      navigate(`/buscar?q=${encodeURIComponent(searchTerm.trim())}`);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+    navigate('/buscar');
   };
 
   const handleLogout = () => {
@@ -35,11 +25,7 @@ const Header = () => {
     }
   };
 
-  const navigationItems = [
-    { name: 'Início', icon: Home, path: '/' },
-    { name: 'Buscar', icon: Search, path: '/buscar' },
-    { name: 'Anunciar', icon: Briefcase, path: '/dashboard' },
-  ];
+  const navigationItems = [];
   return (
     <>
       <header className="bg-[#1a1b1b] shadow-sm sticky top-0 z-50 border-b border-gray-700">
@@ -71,31 +57,29 @@ const Header = () => {
               ))}
             </nav>
 
-            {/* Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <div className="bg-gray-800 rounded-lg border border-gray-600">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar produtos, serviços..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="w-full pl-12 pr-12 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none"
-                  />
-                  <button
-                    onClick={handleSearch}
-                    className="absolute cursor-pointer right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg bg-[#f59820] text-white hover:bg-[#e8891a] transition-colors"
-                  >
-                    <Search className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* Action Buttons Desktop */}
             <div className="hidden lg:flex items-center space-x-3">
+              {/* Botão Início */}
+              <Button 
+                variant="ghost" 
+                className="flex items-center space-x-2 text-gray-300 hover:text-white hover:bg-gray-800"
+                onClick={() => navigate('/')}
+              >
+                <Home className="h-4 w-4" />
+                <span>Início</span>
+              </Button>
+              
+              {/* Botão Buscar */}
+              <Button 
+                variant="ghost" 
+                className="flex items-center space-x-2 text-gray-300 hover:text-white hover:bg-gray-800"
+                onClick={handleSearch}
+              >
+                <Search className="h-4 w-4" />
+                <span>Buscar</span>
+              </Button>
+              
               {isAuthenticated() ? (
                 <>
                   {/* Usuário logado */}
@@ -141,17 +125,10 @@ const Header = () => {
                     className="flex items-center space-x-2 bg-[#f59820] hover:bg-[#e8891a] text-white font-semibold"
                     onClick={() => navigate('/cadastro')}
                   >
-                    <LogIn className="h-4 w-4" />
-                    <span>Cadastrar</span>
+                    <Plus className="h-4 w-4" />
+                    <span>Anunciar</span>
                   </Button>
                   
-                  <Button 
-                    className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold"
-                    onClick={() => navigate('/dashboard')}
-                  >
-                    <Star className="h-4 w-4" />
-                    <span className="hidden xl:inline">Anunciar</span>
-                  </Button>
                 </>
               )}
             </div>
@@ -172,26 +149,18 @@ const Header = () => {
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="absolute top-16 left-0 right-0 bg-[#1a1b1b] border-b border-gray-700 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-6 space-y-6">
-              {/* Mobile Search */}
-              <div className="relative">
-                <div className="bg-gray-800 rounded-lg border border-gray-600">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar produtos, serviços..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="w-full pl-12 pr-12 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none"
-                  />
-                  <button
-                    onClick={handleSearch}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg bg-[#f59820] text-white"
-                  >
-                    <Search className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+              {/* Mobile Search Button */}
+              <Button 
+                variant="outline"
+                className="w-full flex items-center justify-center space-x-2 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white py-3"
+                onClick={() => {
+                  handleSearch();
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <Search className="h-5 w-5" />
+                <span>Buscar</span>
+              </Button>
 
               {/* Mobile Navigation */}
               <nav className="space-y-2">
@@ -212,6 +181,19 @@ const Header = () => {
 
               {/* Mobile Action Buttons */}
               <div className="space-y-3 pt-4 border-t border-gray-700">
+                {/* Botão Início - Mobile */}
+                <Button 
+                  variant="outline"
+                  className="w-full flex items-center justify-center space-x-2 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white py-3"
+                  onClick={() => {
+                    navigate('/');
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  <Home className="h-5 w-5" />
+                  <span>Início</span>
+                </Button>
+                
                 {isAuthenticated() ? (
                   <>
                     {/* Usuário logado - Mobile */}
@@ -260,8 +242,8 @@ const Header = () => {
                         setIsMobileMenuOpen(false);
                       }}
                     >
-                      <LogIn className="h-5 w-5" />
-                      <span>Cadastrar Grátis</span>
+                      <Plus className="h-5 w-5" />
+                      <span>Anunciar</span>
                     </Button>
                     
                     <Button 
@@ -276,16 +258,6 @@ const Header = () => {
                       <span>Fazer Login</span>
                     </Button>
                     
-                    <Button 
-                      className="w-full flex items-center justify-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3"
-                      onClick={() => {
-                        navigate('/dashboard');
-                        setIsMobileMenuOpen(false);
-                      }}
-                    >
-                      <Star className="h-5 w-5" />
-                      <span>Anunciar Negócio</span>
-                    </Button>
                   </>
                 )}
               </div>

@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -16,6 +16,10 @@ const Cadastro = () => {
     nome: '',
     email: '',
     telefone: '',
+    endereco: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
     password: '',
     confirmPassword: ''
   });
@@ -106,6 +110,10 @@ const Cadastro = () => {
         nome: formData.nome,
         email: formData.email,
         telefone: formData.telefone,
+        endereco: formData.endereco,
+        bairro: formData.bairro,
+        cidade: formData.cidade,
+        estado: formData.estado,
         senha: formData.password
       });
       
@@ -224,6 +232,78 @@ const Cadastro = () => {
                   {errors.telefone && (
                     <p className="text-red-500 text-sm">{errors.telefone}</p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endereco" className="text-sm font-medium text-black">
+                    Endereço
+                  </Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="endereco"
+                      name="endereco"
+                      type="text"
+                      placeholder="Rua, número"
+                      value={formData.endereco}
+                      onChange={handleInputChange}
+                      className="pl-10 h-11 border-gray-300 focus:border-black focus:ring-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bairro" className="text-sm font-medium text-black">
+                    Bairro
+                  </Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="bairro"
+                      name="bairro"
+                      type="text"
+                      placeholder="Nome do bairro"
+                      value={formData.bairro}
+                      onChange={handleInputChange}
+                      className="pl-10 h-11 border-gray-300 focus:border-black focus:ring-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cidade" className="text-sm font-medium text-black">
+                    Cidade
+                  </Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="cidade"
+                      name="cidade"
+                      type="text"
+                      placeholder="Nome da cidade"
+                      value={formData.cidade}
+                      onChange={handleInputChange}
+                      className="pl-10 h-11 border-gray-300 focus:border-black focus:ring-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="estado" className="text-sm font-medium text-black">
+                    Estado
+                  </Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="estado"
+                      name="estado"
+                      type="text"
+                      placeholder="Nome do estado"
+                      value={formData.estado}
+                      onChange={handleInputChange}
+                      className="pl-10 h-11 border-gray-300 focus:border-black focus:ring-black"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">

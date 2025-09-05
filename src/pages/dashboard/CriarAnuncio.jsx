@@ -14,18 +14,29 @@ import {
   Image as ImageIcon,
   X,
   Loader2,
-  Lock
+  Lock,
+  Mail
 } from 'lucide-react';
 import { Textarea } from '../../components/ui/textarea';
 import itemService from '../../services/itemService';
 import { useToast } from '../../contexts/ToastContext';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useAuth } from '../../contexts/AuthContext';
+import useEmailVerification from '../../hooks/useEmailVerification';
+import EmailVerificationModal from '../../components/EmailVerificationModal';
 
 const CriarAnuncio = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showSuccess, showError } = useToast();
   const { canCreateAds, loading: loadingSubscription } = useSubscription();
+  const { isEmailVerified } = useAuth();
+  const { 
+    showVerificationModal, 
+    closeVerificationModal, 
+    openVerificationModal,
+    handleVerificationSuccess 
+  } = useEmailVerification();
   
   // Verificar se está editando
   const editId = searchParams.get('edit');
@@ -157,10 +168,17 @@ const CriarAnuncio = () => {
   // Verificar se pode criar anúncios
   useEffect(() => {
     if (!loadingSubscription && !canCreateAds) {
-      showError('Você precisa de uma assinatura ativa para criar anúncios');
       navigate('/dashboard/pagamento');
     }
-  }, [canCreateAds, loadingSubscription, navigate, showError]);
+  }, [canCreateAds, loadingSubscription, navigate]);
+
+  // Verificar se o email está verificado
+  useEffect(() => {
+    if (!loadingSubscription && canCreateAds && !isEmailVerified()) {
+      // Não mostrar toast aqui para evitar loop infinito
+      // O toast será mostrado na interface condicional
+    }
+  }, [canCreateAds, loadingSubscription, isEmailVerified]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -435,6 +453,34 @@ const CriarAnuncio = () => {
             </Button>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Se email não está verificado, mostrar mensagem
+  if (!isEmailVerified()) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Card>
+          <CardContent className="text-center py-12">
+            <Mail className="h-16 w-16 mx-auto mb-4 text-orange-500" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Email Não Verificado
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Você precisa verificar seu email para criar anúncios.
+            </p>
+            <Button onClick={openVerificationModal}>
+              Verificar Email
+            </Button>
+          </CardContent>
+        </Card>
+        
+        {/* Modal de verificação de email */}
+        <EmailVerificationModal
+          isOpen={showVerificationModal}
+          onClose={closeVerificationModal}
+        />
       </div>
     );
   }
@@ -761,6 +807,12 @@ const CriarAnuncio = () => {
           </div>
         </form>
       </motion.div>
+
+      {/* Modal de Verificação de Email */}
+      <EmailVerificationModal
+        isOpen={showVerificationModal}
+        onClose={closeVerificationModal}
+      />
     </div>
   );
 };

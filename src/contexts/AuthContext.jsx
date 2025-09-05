@@ -108,15 +108,39 @@ export const AuthProvider = ({ children }) => {
     return user?.role === 'admin';
   };
 
+  const isEmailVerified = () => {
+    return user?.email_verificado === true;
+  };
+
+  const refreshUser = async () => {
+    try {
+      if (authService.isAuthenticated()) {
+        const response = await authService.getProfile();
+        if (response.sucesso) {
+          setUser(response.dados.usuario);
+          return response.dados.usuario;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar dados do usuário:', error);
+      // Se houver erro, fazer logout para limpar dados inválidos
+      authService.logout();
+      setUser(null);
+    }
+    return null;
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
     updateUser,
+    refreshUser,
     loading,
     isAuthenticated,
-    isAdmin
+    isAdmin,
+    isEmailVerified
   };
 
   return (

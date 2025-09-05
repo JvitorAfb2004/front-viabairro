@@ -44,6 +44,16 @@ class AuthService {
     }
   }
 
+  // Enviar email de verificação
+  async enviarEmailVerificacao() {
+    try {
+      const response = await apiService.post('/auth/enviar-verificacao');
+      return response;
+    } catch (error) {
+      throw new Error(error.message || 'Erro ao enviar email de verificação');
+    }
+  }
+
   // Esqueci minha senha
   async forgotPassword(email) {
     try {

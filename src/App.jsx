@@ -24,6 +24,7 @@ import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import ResetarSenha from "./pages/ResetarSenha";
+import VerificarEmail from "./pages/VerificarEmail";
 import Termos from "./pages/Termos";
 import Privacidade from "./pages/Privacidade";
 
@@ -66,6 +67,7 @@ function App() {
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/recuperar-senha" element={<RecuperarSenha />} />
             <Route path="/resetar-senha" element={<ResetarSenha />} />
+            <Route path="/verificar-email/:token" element={<VerificarEmail />} />
 
             {/* Rotas de Termos e Privacidade */}
             <Route path="/termos" element={<Termos />} />

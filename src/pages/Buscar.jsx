@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Search, Filter, MapPin, Star, ArrowRight, X, Loader2, User, Eye, Phone, Mail } from 'lucide-react'
 import { Button } from '../components/ui/button'
@@ -14,12 +14,15 @@ const Buscar = () => {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedState, setSelectedState] = useState('')
   const [selectedCity, setSelectedCity] = useState('')
+  const [selectedBairro, setSelectedBairro] = useState('')
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [searchResults, setSearchResults] = useState([])
   const [categories, setCategories] = useState([])
   const [estados, setEstados] = useState([])
   const [cidades, setCidades] = useState([])
+  const [bairros, setBairros] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searching, setSearching] = useState(false)
   const [pagination, setPagination] = useState({
     total: 0,
     pagina: 1,
@@ -48,11 +51,13 @@ const Buscar = () => {
         const categoria = searchParams.get('categoria') || ''
         const estado = searchParams.get('estado') || ''
         const cidade = searchParams.get('cidade') || ''
+        const bairro = searchParams.get('bairro') || ''
         
         setSearchTerm(termo)
         setSelectedCategory(categoria)
         setSelectedState(estado)
         setSelectedCity(cidade)
+        setSelectedBairro(bairro)
 
         // Carregar cidades se estado estiver selecionado
         if (estado) {
@@ -60,8 +65,16 @@ const Buscar = () => {
           setCidades(cidadesData)
         }
 
+        // Carregar bairros se cidade estiver selecionada
+        if (cidade && estado) {
+          const bairrosData = await publicService.getBairrosPorCidade(cidade, estado)
+          if (bairrosData.sucesso) {
+            setBairros(bairrosData.dados.bairros)
+          }
+        }
+
         // Carregar resultados da busca
-        await buscarAnuncios(1, { termo, categoria, estado, cidade })
+        await buscarAnuncios(1, { termo, categoria, estado, cidade, bairro })
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
       } finally {
@@ -72,14 +85,17 @@ const Buscar = () => {
     carregarDados()
   }, [searchParams])
 
-  // Buscar anúncios
-  const buscarAnuncios = async (pagina = 1, filtrosCustom = {}) => {
+  // Buscar anúncios com useCallback para otimização
+  const buscarAnuncios = useCallback(async (pagina = 1, filtrosCustom = {}) => {
     try {
+      setSearching(true)
+      
       const filtros = {
-        termo: filtrosCustom.termo || searchTerm,
-        categoria: filtrosCustom.categoria || selectedCategory,
-        estado: filtrosCustom.estado || selectedState,
-        cidade: filtrosCustom.cidade || selectedCity,
+        termo: filtrosCustom.termo !== undefined ? filtrosCustom.termo : searchTerm,
+        categoria: filtrosCustom.categoria !== undefined ? filtrosCustom.categoria : selectedCategory,
+        estado: filtrosCustom.estado !== undefined ? filtrosCustom.estado : selectedState,
+        cidade: filtrosCustom.cidade !== undefined ? filtrosCustom.cidade : selectedCity,
+        bairro: filtrosCustom.bairro !== undefined ? filtrosCustom.bairro : selectedBairro,
         pagina,
         limite: 20
       }
@@ -91,13 +107,17 @@ const Buscar = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar anúncios:', error)
+    } finally {
+      setSearching(false)
     }
-  }
+  }, [searchTerm, selectedCategory, selectedState, selectedCity, selectedBairro])
 
   // Carregar cidades quando estado mudar
   const handleStateChange = async (estado) => {
     setSelectedState(estado)
     setSelectedCity('') // Limpar cidade quando estado mudar
+    setSelectedBairro('') // Limpar bairro quando estado mudar
+    setBairros([]) // Limpar lista de bairros
     
     if (estado) {
       try {
@@ -111,6 +131,25 @@ const Buscar = () => {
     }
   }
 
+  // Carregar bairros quando cidade mudar
+  const handleCityChange = async (cidade) => {
+    setSelectedCity(cidade)
+    setSelectedBairro('') // Limpar bairro quando cidade mudar
+    
+    if (cidade && selectedState) {
+      try {
+        const bairrosData = await publicService.getBairrosPorCidade(cidade, selectedState)
+        if (bairrosData.sucesso) {
+          setBairros(bairrosData.dados.bairros)
+        }
+      } catch (error) {
+        console.error('Erro ao carregar bairros:', error)
+      }
+    } else {
+      setBairros([])
+    }
+  }
+
   const handleApplyFilters = () => {
     // Atualizar URL com filtros
     const params = new URLSearchParams()
@@ -118,6 +157,7 @@ const Buscar = () => {
     if (selectedCategory) params.set('categoria', selectedCategory)
     if (selectedState) params.set('estado', selectedState)
     if (selectedCity) params.set('cidade', selectedCity)
+    if (selectedBairro) params.set('bairro', selectedBairro)
     
     setSearchParams(params)
     buscarAnuncios(1)
@@ -129,11 +169,13 @@ const Buscar = () => {
     setSelectedCategory('')
     setSelectedState('')
     setSelectedCity('')
+    setSelectedBairro('')
     setCidades([])
+    setBairros([])
     
     // Limpar URL
     setSearchParams(new URLSearchParams())
-    buscarAnuncios(1, { termo: '', categoria: '', estado: '', cidade: '' })
+    buscarAnuncios(1, { termo: '', categoria: '', estado: '', cidade: '', bairro: '' })
   }
 
   const handlePageChange = (novaPagina) => {
@@ -196,7 +238,7 @@ const Buscar = () => {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Ex: padaria, barbearia, São Paulo..."
+                    placeholder="Ex: padaria, barbearia, São Paulo, SP..."
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -249,7 +291,7 @@ const Buscar = () => {
                 </label>
                 <Select 
                   value={selectedCity || "all"} 
-                  onValueChange={(value) => setSelectedCity(value === "all" ? "" : value)}
+                  onValueChange={(value) => handleCityChange(value === "all" ? "" : value)}
                   disabled={!selectedState}
                 >
                   <SelectTrigger>
@@ -260,6 +302,30 @@ const Buscar = () => {
                     {cidades.map((cidade) => (
                       <SelectItem key={cidade.id} value={cidade.nome}>
                         {cidade.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Filtro por bairro */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bairro
+                </label>
+                <Select 
+                  value={selectedBairro || "all"} 
+                  onValueChange={(value) => setSelectedBairro(value === "all" ? "" : value)}
+                  disabled={!selectedCity || !selectedState}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={selectedCity ? "Selecione um bairro" : "Primeiro selecione uma cidade"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os bairros</SelectItem>
+                    {bairros.map((bairro) => (
+                      <SelectItem key={bairro} value={bairro}>
+                        {bairro}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -323,7 +389,11 @@ const Buscar = () => {
                         {anuncio.usuario.endereco && (
                           <div className="flex items-center space-x-2 mb-1">
                             <MapPin className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm text-gray-600">{anuncio.usuario.endereco} {anuncio.usuario.cidade} {anuncio.usuario.estado}</span>
+                            <span className="text-sm text-gray-600">
+                              {anuncio.usuario.endereco}
+                              {anuncio.usuario.bairro && `, ${anuncio.usuario.bairro}`}
+                              {`, ${anuncio.usuario.cidade} - ${anuncio.usuario.estado}`}
+                            </span>
                           </div>
                         )}
                         
@@ -444,7 +514,7 @@ const Buscar = () => {
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Ex: padaria, barbearia, São Paulo..."
+                      placeholder="Ex: padaria, barbearia, São Paulo, SP..."
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -497,7 +567,7 @@ const Buscar = () => {
                   </label>
                   <Select 
                     value={selectedCity || "all"} 
-                    onValueChange={(value) => setSelectedCity(value === "all" ? "" : value)}
+                    onValueChange={(value) => handleCityChange(value === "all" ? "" : value)}
                     disabled={!selectedState}
                   >
                     <SelectTrigger>
@@ -508,6 +578,30 @@ const Buscar = () => {
                       {cidades.map((cidade) => (
                         <SelectItem key={cidade.id} value={cidade.nome}>
                           {cidade.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro por bairro */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bairro
+                  </label>
+                  <Select 
+                    value={selectedBairro || "all"} 
+                    onValueChange={(value) => setSelectedBairro(value === "all" ? "" : value)}
+                    disabled={!selectedCity || !selectedState}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={selectedCity ? "Selecione um bairro" : "Primeiro selecione uma cidade"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os bairros</SelectItem>
+                      {bairros.map((bairro) => (
+                        <SelectItem key={bairro} value={bairro}>
+                          {bairro}
                         </SelectItem>
                       ))}
                     </SelectContent>

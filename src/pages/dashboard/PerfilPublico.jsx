@@ -1,26 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Upload, Camera, Link, Save, Eye, Loader2, Building, Globe, MapPin } from 'lucide-react'
+import { Upload, Camera, Link, Save, Eye, Loader2, Building, Globe } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import userService from '../../services/userService'
-import ibgeService from '../../services/ibgeService'
 
 const PerfilPublico = () => {
   const { user } = useAuth()
   const { showSuccess, showError } = useToast()
   const [formData, setFormData] = useState({
-    nome: '',
     descricao: '',
-    telefone: '',
-    email: '',
-    endereco: '',
-    cidade: '',
-    estado: '',
     instagram: '',
     facebook: '',
     website: '',
@@ -35,54 +27,16 @@ const PerfilPublico = () => {
     banner3: ''
   })
   const [loading, setLoading] = useState(false)
-  const [loadingEstados, setLoadingEstados] = useState(false)
-  const [errors, setErrors] = useState({})
-  const [estados, setEstados] = useState([])
-  const [estadosFiltrados, setEstadosFiltrados] = useState([])
-  const [mostrarSugestoesEstado, setMostrarSugestoesEstado] = useState(false)
-  const [carregandoDadosIniciais, setCarregandoDadosIniciais] = useState(false)
-  const [dadosIniciaisCarregados, setDadosIniciaisCarregados] = useState(false)
   const [bannerAtual, setBannerAtual] = useState(0)
-
-  // Carregar estados do IBGE
-  useEffect(() => {
-    const carregarEstados = async () => {
-      setLoadingEstados(true)
-      try {
-        const estadosData = await ibgeService.getEstados()
-        setEstados(estadosData)
-      } catch (error) {
-        console.error('Erro ao carregar estados:', error)
-        showError('Erro ao carregar lista de estados')
-      } finally {
-        setLoadingEstados(false)
-      }
-    }
-    
-    carregarEstados()
-  }, [showError])
 
   // Carregar dados do perfil público
   useEffect(() => {
     const carregarPerfil = async () => {
       try {
         setLoading(true)
-        setCarregandoDadosIniciais(true)
         const response = await userService.getPerfilPublico(user?.id)
         if (response.sucesso) {
           const dados = response.dados
-          
-          // Converter sigla do estado para nome para exibição
-          let nomeEstado = dados.estado || user?.estado || ''
-          if (nomeEstado && estados.length > 0) {
-            // Verificar se é sigla (2 caracteres) ou nome
-            if (nomeEstado.length === 2) {
-              const estadoEncontrado = estados.find(e => e.sigla === nomeEstado)
-              if (estadoEncontrado) {
-                nomeEstado = estadoEncontrado.nome
-              }
-            }
-          }
           
           // Separar banners para controle independente
           const bannersData = {
@@ -91,17 +45,10 @@ const PerfilPublico = () => {
             banner3: dados.banner3 || ''
           }
           
-          
           setBanners(bannersData)
           
           setFormData({
-            nome: dados.nome || user?.nome || '',
             descricao: dados.descricao || '',
-            telefone: dados.telefone || user?.telefone || '',
-            email: dados.email || user?.email || '',
-            endereco: dados.endereco || '',
-            cidade: dados.cidade || user?.cidade || '',
-            estado: nomeEstado, // Usar nome para exibição
             instagram: dados.instagram || '',
             facebook: dados.facebook || '',
             website: dados.website || '',
@@ -114,36 +61,19 @@ const PerfilPublico = () => {
       } catch (error) {
         console.error('Erro ao carregar perfil público:', error)
         // Usar dados básicos do usuário se não conseguir carregar
-        let nomeEstado = user?.estado || ''
-        if (nomeEstado && estados.length > 0) {
-          if (nomeEstado.length === 2) {
-            const estadoEncontrado = estados.find(e => e.sigla === nomeEstado)
-            if (estadoEncontrado) {
-              nomeEstado = estadoEncontrado.nome
-            }
-          }
-        }
-        
         setFormData(prev => ({
           ...prev,
-          nome: user?.nome || '',
-          telefone: user?.telefone || '',
-          email: user?.email || '',
-          cidade: user?.cidade || '',
-          estado: nomeEstado,
           fotoPerfil: user?.foto_perfil || ''
         }))
       } finally {
         setLoading(false)
-        setCarregandoDadosIniciais(false)
-        setDadosIniciaisCarregados(true)
       }
     }
 
     if (user) {
       carregarPerfil()
     }
-  }, [user, estados])
+  }, [user])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -153,33 +83,6 @@ const PerfilPublico = () => {
     }))
   }
 
-  const handleEstadoChange = (e) => {
-    const valor = e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      estado: valor
-    }));
-
-    // Filtrar estados baseado no que o usuário está digitando
-    if (valor.length > 0) {
-      const filtrados = estados.filter(estado =>
-        estado.nome.toLowerCase().includes(valor.toLowerCase())
-      );
-      setEstadosFiltrados(filtrados.slice(0, 10)); // Limitar a 10 sugestões
-      setMostrarSugestoesEstado(true);
-    } else {
-      setEstadosFiltrados([]);
-      setMostrarSugestoesEstado(false);
-    }
-  }
-
-  const selecionarEstado = (estado) => {
-    setFormData(prev => ({
-      ...prev,
-      estado: estado.nome
-    }));
-    setMostrarSugestoesEstado(false);
-  }
 
   const proximoBanner = () => {
     const bannersArray = [banners.banner1, banners.banner2, banners.banner3].filter(Boolean)
@@ -252,23 +155,8 @@ const PerfilPublico = () => {
     
     try {
       setLoading(true)
-      
-      // Converter nome do estado para sigla antes de enviar
-      let estadoParaEnviar = formData.estado
-      if (formData.estado) {
-        const estadoEncontrado = estados.find(e => e.nome === formData.estado)
-        if (estadoEncontrado) {
-          estadoParaEnviar = estadoEncontrado.sigla
-        }
-      }
 
       const dadosParaEnviar = {
-        nome: formData.nome,
-        email: formData.email,
-        telefone: formData.telefone,
-        endereco: formData.endereco,
-        cidade: formData.cidade,
-        estado: estadoParaEnviar,
         descricao: formData.descricao,
         redes_sociais: {
           instagram: formData.instagram,
@@ -313,127 +201,35 @@ const PerfilPublico = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Informações Básicas */}
+        {/* Informações do Perfil Público */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Building className="h-5 w-5 mr-2" />
-              Informações Básicas
+              Informações do Perfil Público
             </CardTitle>
+            <p className="text-sm text-gray-600 mt-2">
+              Essas informações aparecem no seu perfil público. Para alterar dados básicos como nome, telefone e endereço, vá em "Dados da Conta".
+            </p>
           </CardHeader>
           <CardContent>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="nome">Nome do Negócio</Label>
-              <Input
-                id="nome"
-                name="nome"
-                value={formData.nome}
-                onChange={handleInputChange}
-                required
-              />
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="descricao">Descrição do Negócio</Label>
+                <textarea
+                  id="descricao"
+                  name="descricao"
+                  value={formData.descricao}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Conte um pouco sobre seu negócio, serviços oferecidos, experiência, etc..."
+                />
+                <p className="text-sm text-gray-500">
+                  Esta descrição aparecerá no seu perfil público para que os clientes conheçam melhor seu negócio.
+                </p>
+              </div>
             </div>
-
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="descricao">Descrição</Label>
-              <textarea
-                id="descricao"
-                name="descricao"
-                value={formData.descricao}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="Conte um pouco sobre seu negócio..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                name="telefone"
-                type="tel"
-                value={formData.telefone}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço</Label>
-              <Input
-                id="endereco"
-                name="endereco"
-                value={formData.endereco}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
-              <Input
-                id="cidade"
-                name="cidade"
-                value={formData.cidade}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="space-y-2 relative">
-              <Label htmlFor="estado" className="flex items-center">
-                <MapPin className="h-4 w-4 mr-1" />
-                Estado
-              </Label>
-              <Input
-                id="estado"
-                name="estado"
-                value={formData.estado}
-                onChange={handleEstadoChange}
-                onFocus={() => {
-                  if (formData.estado.length > 0) {
-                    setMostrarSugestoesEstado(true);
-                  }
-                }}
-                onBlur={() => {
-                  setTimeout(() => setMostrarSugestoesEstado(false), 200);
-                }}
-                placeholder="Digite o nome do estado"
-              />
-              
-              {/* Sugestões de estados */}
-              {mostrarSugestoesEstado && estadosFiltrados.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {estadosFiltrados.map(estado => (
-                    <div
-                      key={estado.id}
-                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                      onClick={() => selecionarEstado(estado)}
-                    >
-                      {estado.nome}
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {loadingEstados && (
-                <div className="flex items-center text-sm text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Carregando estados...
-                </div>
-              )}
-            </div>
-          </div>
           </CardContent>
         </Card>
 

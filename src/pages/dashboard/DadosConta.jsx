@@ -19,6 +19,7 @@ const DadosConta = () => {
     endereco: '',
     cidade: '',
     estado: '',
+    bairro: '',
     senha: '',
     confirmarSenha: ''
   })
@@ -83,6 +84,7 @@ const DadosConta = () => {
           endereco: user.endereco || '',
           cidade: user.cidade || '',
           estado: nomeEstado, // Usar nome para exibição
+          bairro: user.bairro || '',
           senha: '',
           confirmarSenha: ''
         }
@@ -286,7 +288,8 @@ const DadosConta = () => {
         telefone: formData.telefone,
         endereco: formData.endereco,
         cidade: formData.cidade,
-        estado: formData.estado // Salvar o nome do estado diretamente
+        estado: formData.estado, // Salvar o nome do estado diretamente
+        bairro: formData.bairro
       }
 
       // Se a senha foi preenchida, incluir na atualização
@@ -393,7 +396,21 @@ const DadosConta = () => {
                   name="endereco"
                   value={formData.endereco}
                   onChange={handleInputChange}
-                  placeholder="Rua, número, bairro"
+                  placeholder="Rua, número"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bairro" className="flex items-center">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Bairro
+                </Label>
+                <Input
+                  id="bairro"
+                  name="bairro"
+                  value={formData.bairro}
+                  onChange={handleInputChange}
+                  placeholder="Nome do bairro"
                 />
               </div>
 

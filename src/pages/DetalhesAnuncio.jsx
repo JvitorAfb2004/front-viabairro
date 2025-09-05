@@ -428,7 +428,7 @@ const DetalhesAnuncio = () => {
                 >
                   <Card className="bg-white/70 backdrop-blur-sm shadow-xl border border-white/20">
                     <CardContent className="p-6">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4">Outros Anúncios de {anuncio.usuario.nome}</h3>
+                      <h3 className="text-lg font-bold text-slate-800 mb-4">Anúncios Relacionados</h3>
                       <div className="space-y-4">
                         {anunciosRelacionados.map((anuncioRel) => (
                           <Link

@@ -45,6 +45,7 @@ const publicService = {
       if (filtros.categoria) params.append('categoria', filtros.categoria)
       if (filtros.estado) params.append('estado', filtros.estado)
       if (filtros.cidade) params.append('cidade', filtros.cidade)
+      if (filtros.bairro) params.append('bairro', filtros.bairro)
       if (filtros.pagina) params.append('pagina', filtros.pagina)
       if (filtros.limite) params.append('limite', filtros.limite)
       if (filtros.ordenar) params.append('ordenar', filtros.ordenar)
@@ -99,6 +100,20 @@ const publicService = {
       return response
     } catch (error) {
       throw new Error(error.message || 'Erro ao carregar anúncios do usuário')
+    }
+  },
+
+  // Obter bairros por cidade
+  async getBairrosPorCidade(cidade, estado) {
+    try {
+      const params = new URLSearchParams({
+        cidade,
+        estado
+      })
+      const response = await apiService.get(`/public/bairros-por-cidade?${params}`)
+      return response
+    } catch (error) {
+      throw new Error(error.message || 'Erro ao carregar bairros')
     }
   }
 }
