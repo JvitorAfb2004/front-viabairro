@@ -1,0 +1,50 @@
+# Headers para PWA na Vercel
+/sw.js
+  Content-Type: application/javascript
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+/manifest.json
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=86400
+
+/browserconfig.xml
+  Content-Type: application/xml
+  Cache-Control: public, max-age=86400
+
+/favicon.ico
+  Content-Type: image/x-icon
+  Cache-Control: public, max-age=86400
+
+/*.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=31536000
+
+/*.jpg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=31536000
+
+/*.jpeg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=31536000
+
+/*.gif
+  Content-Type: image/gif
+  Cache-Control: public, max-age=31536000
+
+/*.svg
+  Content-Type: image/svg+xml
+  Cache-Control: public, max-age=31536000
+
+/*.webp
+  Content-Type: image/webp
+  Cache-Control: public, max-age=31536000
+
+/*.css
+  Content-Type: text/css
+  Cache-Control: public, max-age=31536000
+
+/*.js
+  Content-Type: application/javascript
+  Cache-Control: public, max-age=31536000
