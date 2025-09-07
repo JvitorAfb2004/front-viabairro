@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Settings } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {
   const [showCookieManager, setShowCookieManager] = useState(false);
@@ -64,19 +66,18 @@ const Footer = () => {
         <div className="border-t border-gray-700 mt-8 pt-6">
           <div className="flex flex-col sm:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 ViaBairro. Todos os direitos reservados.
+              viabairro.com.br
             </p>
-            <p className="text-gray-400 text-sm mt-2 sm:mt-0">
-              Feito por{' '}
-              <a 
-                href="https://jvitor.tech" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                J Vitor AFB
-              </a>
-            </p>
+            <Button 
+              className="mt-2 sm:mt-0"
+              onClick={() => {
+                const { isAuthenticated } = useAuth();
+                const navigate = useNavigate();
+                navigate(isAuthenticated() ? '/dashboard/novo-anuncio' : '/cadastro');
+              }}
+            >
+              Anuncie aqui
+            </Button>
           </div>
         </div>
       </div>

@@ -73,8 +73,10 @@ const Buscar = () => {
           }
         }
 
-        // Carregar resultados da busca
-        await buscarAnuncios(1, { termo, categoria, estado, cidade, bairro })
+        // Adicionar condição antes de chamar buscarAnuncios
+        if (termo || categoria || estado || cidade || bairro) {
+          await buscarAnuncios(1, { termo, categoria, estado, cidade, bairro });
+        }
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
       } finally {
@@ -84,6 +86,14 @@ const Buscar = () => {
 
     carregarDados()
   }, [searchParams])
+
+  // Adicionar useEffect
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile && searchParams.get('openFilter') === 'true') {
+      setIsFilterModalOpen(true);
+    }
+  }, [searchParams]);
 
   // Buscar anúncios com useCallback para otimização
   const buscarAnuncios = useCallback(async (pagina = 1, filtrosCustom = {}) => {
@@ -151,6 +161,10 @@ const Buscar = () => {
   }
 
   const handleApplyFilters = () => {
+    if (!searchTerm && !selectedCategory && !selectedState && !selectedCity && !selectedBairro) {
+      // Mostrar mensagem ou return
+      return;
+    }
     // Atualizar URL com filtros
     const params = new URLSearchParams()
     if (searchTerm) params.set('q', searchTerm)
@@ -363,8 +377,8 @@ const Buscar = () => {
                 <div key={anuncio.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
                   <div className="flex flex-col md:flex-row gap-6">
                     <img
-                      src={anuncio.imagem || '/logo.png'}
-                      alt={anuncio.titulo}
+                      src={anuncio.usuario?.foto_perfil || '/default-user.png'}
+                      alt={anuncio.usuario?.nome}
                       className="w-full md:w-48 h-32 object-cover rounded-lg"
                     />
                     
@@ -373,9 +387,9 @@ const Buscar = () => {
                         <h3 className="text-xl font-semibold text-gray-900">
                           {anuncio.titulo}
                         </h3>
-                        <span className="text-lg font-bold text-green-600">
-                          {formatarPreco(anuncio.preco)}
-                        </span>
+                        <p className="text-sm text-gray-600">
+                          Por: {anuncio.usuario?.nome || 'Anunciante desconhecido'}
+                        </p>
                       </div>
                       
                       <p className="text-blue-600 font-medium mb-3">{anuncio.categoria}</p>
@@ -390,9 +404,7 @@ const Buscar = () => {
                           <div className="flex items-center space-x-2 mb-1">
                             <MapPin className="h-4 w-4 text-gray-500" />
                             <span className="text-sm text-gray-600">
-                              {anuncio.usuario.endereco}
-                              {anuncio.usuario.bairro && `, ${anuncio.usuario.bairro}`}
-                              {`, ${anuncio.usuario.cidade} - ${anuncio.usuario.estado}`}
+                              {anuncio.usuario.endereco} - {anuncio.usuario.bairro} - {anuncio.usuario.cidade} - {anuncio.usuario.estado}
                             </span>
                           </div>
                         )}

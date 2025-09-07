@@ -1,5 +1,5 @@
 // Configuração base da API
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://clientes-backend-viabairro.an7euh.easypanel.host/api');
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.viabairro.com.br/api';
 
 class ApiService {
   constructor() {

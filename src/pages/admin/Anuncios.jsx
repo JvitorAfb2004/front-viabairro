@@ -191,10 +191,10 @@ const Anuncios = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">Criado em:</span> {new Date(anuncio.dataCriacao).toLocaleDateString('pt-BR')}
+                      <span className="font-medium">Criado em:</span> {new Date(anuncio.createdAt || anuncio.dataCriacao).toLocaleDateString('pt-BR')}
                     </p>
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">Visualizações:</span> {anuncio.visualizacoes}
+                      <span className="font-medium">Visualizações:</span> {anuncio.visualizacoes || 0}
                     </p>
                   </div>
                 </div>

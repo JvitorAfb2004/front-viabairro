@@ -9,7 +9,7 @@ const Header = () => {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const handleSearch = () => {
-    navigate('/buscar');
+    navigate('/buscar?openFilter=true');
   };
 
   const handleLogout = () => {
@@ -70,14 +70,14 @@ const Header = () => {
                 <span>Início</span>
               </Button>
               
-              {/* Botão Buscar */}
+              {/* Botão Filtro */}
               <Button 
                 variant="ghost" 
                 className="flex items-center space-x-2 text-gray-300 hover:text-white hover:bg-gray-800"
                 onClick={handleSearch}
               >
                 <Search className="h-4 w-4" />
-                <span>Buscar</span>
+                <span>Filtrar busca</span>
               </Button>
               
               {isAuthenticated() ? (
@@ -126,7 +126,7 @@ const Header = () => {
                     onClick={() => navigate('/cadastro')}
                   >
                     <Plus className="h-4 w-4" />
-                    <span>Anunciar</span>
+                    <span>Anuncie aqui</span>
                   </Button>
                   
                 </>
@@ -149,7 +149,7 @@ const Header = () => {
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="absolute top-16 left-0 right-0 bg-[#1a1b1b] border-b border-gray-700 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-6 space-y-6">
-              {/* Mobile Search Button */}
+              {/* Mobile Filter Button */}
               <Button 
                 variant="outline"
                 className="w-full flex items-center justify-center space-x-2 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white py-3"
@@ -159,7 +159,7 @@ const Header = () => {
                 }}
               >
                 <Search className="h-5 w-5" />
-                <span>Buscar</span>
+                <span>Filtrar busca</span>
               </Button>
 
               {/* Mobile Navigation */}
@@ -243,7 +243,7 @@ const Header = () => {
                       }}
                     >
                       <Plus className="h-5 w-5" />
-                      <span>Anunciar</span>
+                      <span>Anuncie aqui</span>
                     </Button>
                     
                     <Button 

@@ -76,7 +76,7 @@ const Planos = () => {
       nome: plano.nome || '',
       descricao: plano.descricao || '',
       valor: plano.valor ? formatCurrency((plano.valor * 100).toString()) : '',
-      qtdAnuncios: plano.qtdAnuncios || '',
+      qtdAnuncios: plano.qtdAnuncios?.toString() || plano.qtd_anuncios?.toString() || '',
       ativo: plano.ativo || false
     })
     setEditingPlano(plano)
@@ -313,103 +313,108 @@ const Planos = () => {
         }}
         title={editingPlano ? 'Editar Plano' : 'Novo Plano'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome do Plano
-            </label>
-            <input
-              type="text"
-              value={formData.nome}
-              onChange={(e) => handleInputChange('nome', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="Ex: Plano Premium"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Descrição
-            </label>
-            <textarea
-              value={formData.descricao}
-              onChange={(e) => handleInputChange('descricao', e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="Descreva o plano..."
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Valor Anual
-            </label>
-            <input
-              type="text"
-              value={formData.valor}
-              onChange={(e) => handleInputChange('valor', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="R$ 1.200,00"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quantidade de Anúncios
-            </label>
-            <input
-              type="number"
-              value={formData.qtdAnuncios}
-              onChange={(e) => handleInputChange('qtdAnuncios', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              placeholder="10"
-              required
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="ativo"
-              checked={formData.ativo}
-              onChange={(e) => handleInputChange('ativo', e.target.checked)}
-              className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-            />
-            <label htmlFor="ativo" className="text-sm text-gray-700">
-              Plano ativo
-            </label>
-          </div>
-          
-          <div className="flex space-x-3 pt-4">
-            <Button 
-              type="submit" 
-              className="flex-1 bg-orange-600 hover:bg-orange-700"
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                editingPlano ? 'Salvar Alterações' : 'Criar Plano'
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowCreateForm(false)
-                setEditingPlano(null)
-              }}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-          </div>
-        </form>
+        <div className="h-[500px] overflow-y-auto pr-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nome do Plano
+              </label>
+              <input
+                type="text"
+                value={formData.nome}
+                onChange={(e) => handleInputChange('nome', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="Ex: Plano Premium"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descrição
+              </label>
+              <textarea
+                value={formData.descricao}
+                onChange={(e) => handleInputChange('descricao', e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                placeholder="Descreva o plano..."
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Valor Anual
+                </label>
+                <input
+                  type="text"
+                  value={formData.valor}
+                  onChange={(e) => handleInputChange('valor', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="R$ 1.200,00"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quantidade de Anúncios
+                </label>
+                <input
+                  type="number"
+                  value={formData.qtdAnuncios}
+                  onChange={(e) => handleInputChange('qtdAnuncios', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="10"
+                  min="1"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="ativo"
+                checked={formData.ativo}
+                onChange={(e) => handleInputChange('ativo', e.target.checked)}
+                className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+              />
+              <label htmlFor="ativo" className="text-sm text-gray-700">
+                Plano ativo
+              </label>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+              <Button 
+                type="submit" 
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  editingPlano ? 'Salvar Alterações' : 'Criar Plano'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowCreateForm(false)
+                  setEditingPlano(null)
+                }}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </div>
       </Dialog>
 
       {planos.length === 0 && (

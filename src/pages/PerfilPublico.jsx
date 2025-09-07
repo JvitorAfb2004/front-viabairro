@@ -27,7 +27,14 @@ const PerfilPublico = () => {
             return
           }
           
-          setProfile({
+          const bannersArray = [dados.banner1, dados.banner2, dados.banner3].filter(banner => banner && banner.trim() !== '')
+          console.log('Banners encontrados:', bannersArray)
+          console.log('Banner1:', dados.banner1)
+          console.log('Banner2:', dados.banner2)
+          console.log('Banner3:', dados.banner3)
+          console.log('Tamanho do array de banners:', bannersArray.length)
+          
+          const profileData = {
             name: dados.nome || 'Nome não disponível',
             description: dados.descricao || 'Descrição não disponível',
             location: `${dados.cidade || 'Cidade não informada'}, ${dados.estado || 'Estado não informado'}`,
@@ -38,9 +45,12 @@ const PerfilPublico = () => {
               facebook: dados.facebook || '',
               website: dados.website || ''
             },
-            banners: [dados.banner1, dados.banner2, dados.banner3].filter(Boolean),
+            banners: bannersArray,
             profileImage: dados.fotoPerfil || '/logo.png'
-          })
+          }
+          
+          console.log('Profile data completo:', profileData)
+          setProfile(profileData)
           
           console.log('Produtos recebidos da API:', dados.itens)
           setProducts(dados.itens || [])
@@ -115,32 +125,44 @@ const PerfilPublico = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        
         {/* Carrossel de Banners */}
-        {profile.banners.length > 0 && (
+        {profile && profile.banners && profile.banners.length > 0 && (
           <div className="relative mb-8">
-            <div className="relative overflow-hidden rounded-lg">
+            <div className="relative overflow-hidden rounded-lg bg-gray-200" style={{ height: '400px' }}>
               <img
                 src={profile.banners[currentBannerIndex]}
                 alt={`Banner ${currentBannerIndex + 1}`}
-                className="w-full h-64 object-cover transition-transform duration-500"
+                className="w-full h-full object-cover transition-all duration-500"
+                style={{ 
+                  minHeight: '400px',
+                  maxHeight: '400px'
+                }}
+                onError={(e) => {
+                  console.error('Erro ao carregar banner:', profile.banners[currentBannerIndex])
+                }}
+                onLoad={() => {
+                  console.log('Banner carregado com sucesso:', profile.banners[currentBannerIndex])
+                }}
               />
-              <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
               
               {/* Navegação do Carrossel */}
               {profile.banners.length > 1 && (
                 <>
                   <button
                     onClick={prevBanner}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-3 rounded-full transition-all shadow-lg"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-5 h-5" />
                   </button>
                   
                   <button
                     onClick={nextBanner}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white p-2 rounded-full transition-all"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-3 rounded-full transition-all shadow-lg"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                   
                   {/* Indicadores */}

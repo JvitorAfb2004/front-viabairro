@@ -85,7 +85,8 @@ const Usuarios = () => {
   }
 
   const handleViewProfile = (id) => {
-    console.log('Ver perfil do usuário:', id)
+    // Abrir perfil público em nova aba
+    window.open(`/perfil/${id}`, '_blank')
   }
 
   if (loading) {

@@ -9,6 +9,7 @@ const PWAInstallBanner = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [nativeBannerShown, setNativeBannerShown] = useState(false);
 
   useEffect(() => {
     // Verifica se já foi instalado
@@ -26,26 +27,51 @@ const PWAInstallBanner = () => {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(iOS);
 
+    // Detecta se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     // Para Android/Chrome - aguarda o evento beforeinstallprompt
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setIsVisible(true);
+      setNativeBannerShown(true);
+      
+      // No mobile, aguarda mais tempo para não conflitar com banner nativo
+      if (isMobile) {
+        setTimeout(() => {
+          // Só mostra se o banner nativo não foi aceito/rejeitado
+          const dismissed = localStorage.getItem('pwaInstallDismissed');
+          if (!dismissed) {
+            setIsVisible(true);
+          }
+        }, 10000); // 10 segundos no mobile para dar tempo do nativo
+      } else {
+        setIsVisible(true); // Desktop mostra imediatamente
+      }
     };
 
-    // Para iOS - mostra banner após delay
+    // Para iOS - mostra banner após delay maior
     if (iOS) {
       const timer = setTimeout(() => {
         setIsVisible(true);
-      }, 3000); // 3 segundos após carregar
+      }, 8000); // 8 segundos no iOS para não conflitar
       return () => clearTimeout(timer);
     }
 
     // Para outros navegadores
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Listener para detectar quando o app é instalado (banner nativo aceito)
+    const handleAppInstalled = () => {
+      localStorage.setItem('pwaInstalled', 'true');
+      setIsVisible(false);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -88,7 +114,13 @@ const PWAInstallBanner = () => {
     }
   }, []);
 
+  // No mobile, só mostra se não há banner nativo disponível
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   if (!isVisible || isStandalone) return null;
+  
+  // No mobile, se o banner nativo apareceu, não mostra o nosso
+  if (isMobile && nativeBannerShown && !deferredPrompt) return null;
 
   return (
     <AnimatePresence>
@@ -117,7 +149,7 @@ const PWAInstallBanner = () => {
                 <p className="text-xs text-blue-100 mb-3 leading-relaxed">
                   {isIOS 
                     ? "Adicione à tela inicial para acesso rápido e notificações"
-                    : "Instale o app para usar offline e receber notificações"
+                    : "Instale o app para melhor desempenho!!"
                   }
                 </p>
                 
