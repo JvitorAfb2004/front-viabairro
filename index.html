@@ -42,18 +42,19 @@
     <link rel="manifest" href="/manifest.json" />
     
     <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="/logo.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/logo.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
-    <link rel="apple-touch-icon" sizes="167x167" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icon.png" />
     
     <!-- Apple Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="ViaBairro" />
     
     <!-- Microsoft Meta Tags -->
-    <meta name="msapplication-TileImage" content="/logo.png" />
+    <meta name="msapplication-TileImage" content="/icon.png" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
   </head>
   <body>
@@ -64,14 +65,40 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/sw.js', {
+            scope: '/'
+          })
             .then((registration) => {
               console.log('SW registrado com sucesso: ', registration);
+              
+              // Verifica se há atualizações
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // Nova versão disponível
+                    console.log('Nova versão do app disponível!');
+                  }
+                });
+              });
             })
             .catch((registrationError) => {
-              console.log('Falha no registro do SW: ', registrationError);
+              console.error('Falha no registro do SW: ', registrationError);
+              
+              // Tenta novamente após 5 segundos
+              setTimeout(() => {
+                navigator.serviceWorker.register('/sw.js')
+                  .then((registration) => {
+                    console.log('SW registrado na segunda tentativa: ', registration);
+                  })
+                  .catch((error) => {
+                    console.error('Falha na segunda tentativa: ', error);
+                  });
+              }, 5000);
             });
         });
+      } else {
+        console.log('Service Worker não suportado neste navegador');
       }
     </script>
   </body>
